@@ -11,14 +11,22 @@ export const getVehicleTypesSchema = {
 
 
 export const getBrandsSchema = {
-  tags: ["Vehicle"],
-  summary: "Get brands by vehicle type",
-
   params: {
     type: "object",
     required: ["type"],
+
     properties: {
       type: {
+        type: "string",
+      },
+    },
+  },
+
+  querystring: {
+    type: "object",
+
+    properties: {
+      search: {
         type: "string",
       },
     },
@@ -26,19 +34,19 @@ export const getBrandsSchema = {
 };
 
 export const getBrandModelsSchema = {
-  tags: ["Vehicle"],
-  summary: "Get models by brand",
-
   params: {
     type: "object",
     required: ["type", "brandId"],
     properties: {
-      type: {
-        type: "string",
-      },
-      brandId: {
-        type: "string",
-      },
+      type: { type: "string" },
+      brandId: { type: "string" },
+    },
+  },
+
+  querystring: {
+    type: "object",
+    properties: {
+      search: { type: "string" },
     },
   },
 };

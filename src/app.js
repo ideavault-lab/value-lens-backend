@@ -9,12 +9,18 @@ import {
   errorResponse,
   HTTP_STATUS,
 } from "./shared/utils/api-response.js";
+import { connectDatabase } from "./config/database.js";
 
 const __dirname = dirname(
   fileURLToPath(import.meta.url)
 );
 
 export async function buildApp(opts = {}) {
+
+
+  // CONNECT DATABASE
+  await connectDatabase();
+
   const app = Fastify({
     logger: opts.logger ?? {
       transport: {
