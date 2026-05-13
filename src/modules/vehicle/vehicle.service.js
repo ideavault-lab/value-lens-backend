@@ -4,12 +4,15 @@ class VehicleService {
     async getVehicleTypes() {
         return vehicleRepository.getVehicleTypes();
     }
-    async getBrands(type) {
-        return vehicleRepository.getBrands(type);
+    async getBrands(type, search) {
+        return vehicleRepository.getBrands(
+            type,
+            search
+        );
     }
 
-    async getModels(type, brandId) {
-        return vehicleRepository.getModels(type, brandId);
+    async getModels(type, brandId, search) {
+        return vehicleRepository.getModels(type, brandId , search);
     }
 }
 

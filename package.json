@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/server.js"
+    "start": "nodemon src/server.js",
+    "seed": "node src/seeders/run-seeders.js"
   },
   "keywords": [],
   "author": "",
@@ -17,7 +18,10 @@
     "@fastify/rate-limit": "^10.3.0",
     "@fastify/swagger": "^9.7.0",
     "@fastify/swagger-ui": "^5.2.6",
+    "dotenv": "^17.4.2",
     "fastify": "^5.8.5",
+    "mongoose": "^9.6.2",
+    "nodemon": "^3.1.14",
     "swagger-ui": "^5.32.5",
     "zod": "^4.4.2"
   },
