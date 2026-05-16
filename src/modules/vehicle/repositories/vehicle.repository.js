@@ -1,9 +1,9 @@
 
 
-import { notFound } from "../../shared/utils/errors.js";
-import { VehicleModel } from "./models/vehicle-model.model.js";
-import { VehicleType } from "./models/vehicle-type.model.js";
-import { VehicleBrand } from "./models/vehicle-brand.model.js";
+import { notFound } from "../../../shared/utils/errors.js";
+import { VehicleModel } from "../models/vehicle-model.model.js";
+import { VehicleType } from "../models/vehicle-type.model.js";
+import { VehicleBrand } from "../models/vehicle-brand.model.js";
 
 class VehicleRepository {
 

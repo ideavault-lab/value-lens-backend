@@ -1,4 +1,5 @@
-import vehicleController from "./vehicle.controller.js";
+import vehicleController from "./controllers/vehicle.controller.js";
+import MileageController from "./controllers/mileage.controller.js";
 import { getBrandModelsSchema, getBrandsSchema, getVehicleTypesSchema } from "./vehicle.schema.js";
 
 async function vehicleRoutes(app) {
@@ -27,6 +28,11 @@ async function vehicleRoutes(app) {
     },
     vehicleController.getModels
   );
+
+  app.get(
+    "/mileage-insights",
+    MileageController.getMileageInsights
+  )
 }
 
 export default vehicleRoutes;

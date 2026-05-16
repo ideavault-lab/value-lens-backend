@@ -1,4 +1,4 @@
-import vehicleRepository from "./vehicle.repository.js";
+import vehicleRepository from "../repositories/vehicle.repository.js";
 
 class VehicleService {
     async getVehicleTypes() {
