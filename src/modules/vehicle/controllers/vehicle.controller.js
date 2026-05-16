@@ -1,5 +1,5 @@
-import { successResponse } from "../../shared/utils/api-response.js";
-import vehicleService from "./vehicle.service.js";
+import { successResponse } from "../../../shared/utils/api-response.js";
+import vehicleService from "../services/vehicle.service.js";
 
 class VehicleController {
     async getVehicleTypes(request, reply) {
