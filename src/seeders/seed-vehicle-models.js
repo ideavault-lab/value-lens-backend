@@ -1,14 +1,10 @@
+// seeders/vehicle-model.seed.js
+
 import { VehicleBrand }
 from "../modules/vehicle/models/vehicle-brand.model.js";
 
 import { VehicleModel }
 from "../modules/vehicle/models/vehicle-model.model.js";
-
-import { VehicleFuelType }
-from "../modules/vehicle/models/vehicle-fuel-type.model.js";
-
-import { VehicleTransmission }
-from "../modules/vehicle/models/vehicle-transmission.model.js";
 
 import { VEHICLE_MODELS }
 from "./data/vehicle-models.data.js";
@@ -21,33 +17,17 @@ export async function seedVehicleModels() {
 
   for (const model of VEHICLE_MODELS) {
 
-    // brand
     const brand =
       await VehicleBrand.findOne({
         slug: model.brandSlug,
       });
 
     if (!brand) {
+
       throw new Error(
         `Brand not found: ${model.brandSlug}`
       );
     }
-
-    // fuel types
-    const fuelTypes =
-      await VehicleFuelType.find({
-        slug: {
-          $in: model.fuelTypes,
-        },
-      });
-
-    // transmissions
-    const transmissions =
-      await VehicleTransmission.find({
-        slug: {
-          $in: model.transmissions,
-        },
-      });
 
     models.push({
 
@@ -71,18 +51,6 @@ export async function seedVehicleModels() {
 
       discontinued:
         model.discontinued,
-
-      // ✅ SAVE IDS
-      fuelTypeIds:
-        fuelTypes.map(
-          (fuel) => fuel._id
-        ),
-
-      transmissionIds:
-        transmissions.map(
-          (transmission) =>
-            transmission._id
-        ),
 
       ownershipLimit:
         model.ownershipLimit,

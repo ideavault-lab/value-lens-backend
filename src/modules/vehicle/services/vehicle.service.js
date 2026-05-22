@@ -14,6 +14,23 @@ class VehicleService {
     async getModels(type, brandId, search) {
         return vehicleRepository.getModels(type, brandId , search);
     }
+
+    async getVariants(
+  type,
+  brandId,
+  modelId,
+  year,
+  search
+) {
+
+  return vehicleRepository.getVariants(
+    type,
+    brandId,
+    modelId,
+    year,
+    search
+  );
+}
 }
 
 export default new VehicleService();

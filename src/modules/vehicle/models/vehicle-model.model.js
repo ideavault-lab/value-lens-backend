@@ -1,27 +1,29 @@
-import mongoose from "mongoose";
+// modules/vehicle/models/vehicle-model.model.js
 
-// ✅ IMPORTANT
-// import models so mongoose registers them
-import "./vehicle-fuel-type.model.js";
-import "./vehicle-transmission.model.js";
+import mongoose from "mongoose";
 
 const vehicleModelSchema =
   new mongoose.Schema(
     {
       brandId: {
         type: mongoose.Schema.Types.ObjectId,
+
         ref: "VehicleBrand",
+
         required: true,
       },
 
       slug: {
         type: String,
+
         required: true,
+
         trim: true,
       },
 
       name: {
         type: String,
+
         required: true,
       },
 
@@ -43,37 +45,47 @@ const vehicleModelSchema =
 
       discontinued: {
         type: Boolean,
+
         default: false,
       },
 
-      // ✅ CORRECT REF NAME
-      fuelTypeIds: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "VehicleFuelType",
-        },
-      ],
-
-      // ✅ CORRECT REF NAME
-      transmissionIds: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "VehicleTransmission",
-        },
-      ],
+      /*
+      |--------------------------------------------------------------------------
+      | IMPORTANT CHANGE
+      |--------------------------------------------------------------------------
+      | REMOVE:
+      | - fuelTypeIds
+      | - transmissionIds
+      |
+      | Because variants now control:
+      | - fuel type
+      | - transmission
+      |
+      | Example:
+      | Creta
+      |   ├── SX Petrol Manual
+      |   ├── SX Petrol DCT
+      |   ├── SX Diesel Automatic
+      |
+      | So fuel/transmission belongs to VARIANT level.
+      |--------------------------------------------------------------------------
+      */
 
       ownershipLimit: {
         type: Number,
+
         default: 4,
       },
 
       mileageRange: {
         min: Number,
+
         max: Number,
       },
 
       resaleDemand: {
         type: Number,
+
         default: 1,
       },
 
@@ -83,6 +95,7 @@ const vehicleModelSchema =
 
       enabled: {
         type: Boolean,
+
         default: true,
       },
     },
@@ -94,6 +107,7 @@ const vehicleModelSchema =
 vehicleModelSchema.index(
   {
     brandId: 1,
+
     slug: 1,
   },
   {

@@ -1,17 +1,17 @@
 import vehicleController from "./controllers/vehicle.controller.js";
-import MileageController from "./controllers/mileage.controller.js";
-import { getBrandModelsSchema, getBrandsSchema, getVehicleTypesSchema } from "./vehicle.schema.js";
+import { getBrandModelsSchema, getBrandsSchema, getModelVariantsSchema, getVehicleTypesSchema } from "./vehicle.schema.js";
+import kmDrivenController from "./controllers/km-driven.controller.js";
 
 async function vehicleRoutes(app) {
   app.get(
     "/types",
     {
-        schema: getVehicleTypesSchema,
+      schema: getVehicleTypesSchema,
     },
     vehicleController.getVehicleTypes
   );
 
-// BRAND LIST
+  // BRAND LIST
   app.get(
     "/:type/brands",
     {
@@ -30,9 +30,14 @@ async function vehicleRoutes(app) {
   );
 
   app.get(
-    "/mileage-insights",
-    MileageController.getMileageInsights
-  )
+    "/:type/brands/:brandId/models/:modelId/variants",
+    {
+      schema: getModelVariantsSchema,
+    },
+    vehicleController.getVariants
+  );
+
+app.get("/km-driven-insights", kmDrivenController.getInsights);
 }
 
 export default vehicleRoutes;

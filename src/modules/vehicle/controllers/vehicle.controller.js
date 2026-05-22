@@ -44,6 +44,37 @@ class VehicleController {
         return reply.send(successResponse({ data,message:"Models retrieved successfully",})
         );
     }
+
+    async getVariants(request, reply) {
+
+  const {
+    type,
+    brandId,
+    modelId,
+  } = request.params;
+
+  const {
+    year,
+    search,
+  } = request.query;
+
+  const data =
+    await vehicleService.getVariants(
+      type,
+      brandId,
+      modelId,
+      year,
+      search
+    );
+
+  return reply.send(
+    successResponse({
+      data,
+      message:
+        "Variants retrieved successfully",
+    })
+  );
+}
 }
 
 export default new VehicleController();
