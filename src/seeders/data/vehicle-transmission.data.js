@@ -1,3 +1,4 @@
+
 // vehicle-transmissions.data.js
 
 export const VEHICLE_TRANSMISSIONS = [
@@ -16,7 +17,7 @@ export const VEHICLE_TRANSMISSIONS = [
     shortName: "AT",
     icon: "cpu",
     description:
-      "Automatic gearbox transmission",
+      "Traditional automatic transmission",
   },
 
   {
@@ -35,5 +36,32 @@ export const VEHICLE_TRANSMISSIONS = [
     icon: "repeat",
     description:
       "Automated manual transmission",
+  },
+
+  {
+    slug: "dct",
+    name: "DCT",
+    shortName: "DCT",
+    icon: "shuffle",
+    description:
+      "Dual clutch automatic transmission",
+  },
+
+  {
+    slug: "ivt",
+    name: "IVT",
+    shortName: "IVT",
+    icon: "activity",
+    description:
+      "Intelligent variable transmission",
+  },
+
+  {
+    slug: "imt",
+    name: "iMT",
+    shortName: "iMT",
+    icon: "sliders",
+    description:
+      "Intelligent manual transmission",
   },
 ];
