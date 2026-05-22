@@ -4,6 +4,7 @@ import { notFound } from "../../../shared/utils/errors.js";
 import { VehicleModel } from "../models/vehicle-model.model.js";
 import { VehicleType } from "../models/vehicle-type.model.js";
 import { VehicleBrand } from "../models/vehicle-brand.model.js";
+import { VehicleVariant } from "../models/vehicle-variant.model.js";
 
 class VehicleRepository {
 
@@ -71,56 +72,54 @@ class VehicleRepository {
     );
   }
 
+  async getModels(
+    type,
+    brandId,
+    search = ""
+  ) {
 
-  // models
-async getModels(
-  type,
-  brandId,
-  search = ""
-) {
+    const vehicleType =
+      await VehicleType
+        .findOne({
+          slug: type,
+          enabled: true,
+        })
+        .lean();
 
-  const vehicleType =
-    await VehicleType
-      .findOne({
-        slug: type,
-        enabled: true,
-      })
-      .lean();
+    if (!vehicleType) {
 
-  if (!vehicleType) {
+      throw notFound(
+        "Vehicle type not found"
+      );
+    }
 
-    throw notFound(
-      "Vehicle type not found"
-    );
-  }
+    const brand =
+      await VehicleBrand
+        .findOne({
+          _id: brandId,
 
-  const brand =
-    await VehicleBrand
-      .findOne({
-        _id: brandId,
+          vehicleTypeId:
+            vehicleType._id,
 
-        vehicleTypeId:
-          vehicleType._id,
+          enabled: true,
+        })
+        .lean();
 
-        enabled: true,
-      })
-      .lean();
+    if (!brand) {
 
-  if (!brand) {
+      throw notFound(
+        "Brand not found"
+      );
+    }
 
-    throw notFound(
-      "Brand not found"
-    );
-  }
+    const filter = {
 
-  const filter = {
+      brandId: brand._id,
 
-    brandId: brand._id,
+      enabled: true,
 
-    enabled: true,
-
-    ...(search?.trim()
-      ? {
+      ...(search?.trim()
+        ? {
           name: {
             $regex:
               search.trim(),
@@ -128,101 +127,138 @@ async getModels(
             $options: "i",
           },
         }
-      : {}),
+        : {}),
+    };
+
+    const res =
+      await VehicleModel
+        .find(filter)
+
+        .select({
+          _id: 1,
+          name: 1,
+          slug: 1,
+          image: 1,
+          segment: 1,
+        })
+
+        .sort({
+          name: 1,
+        })
+
+        .lean();
+ 
+    return res.map(
+      ({
+        _id,
+        ...rest
+      }) => ({
+        id: _id,
+        ...rest,
+      })
+    );
+  }async getVariants(type, brandId, modelId, year, search = "") {
+  const vehicleType = await VehicleType.findOne({
+    slug: type,
+    enabled: true,
+  }).lean();
+
+  if (!vehicleType) throw notFound("Vehicle type not found");
+
+  const brand = await VehicleBrand.findOne({
+    _id: brandId,
+    vehicleTypeId: vehicleType._id,
+    enabled: true,
+  }).lean();
+
+  if (!brand) throw notFound("Brand not found");
+
+  const model = await VehicleModel.findOne({
+    _id: modelId,
+    brandId: brand._id,
+    enabled: true,
+  }).lean();
+
+  if (!model) throw notFound("Model not found");
+
+  /* ---------------- FILTER ---------------- */
+
+  const match = {
+    modelId: model._id,
+    enabled: true,
   };
 
-  const res =
-    await VehicleModel
-      .find(filter)
+  const numYear = Number(year);
+  if (year !== undefined && year !== null && year !== "" && !Number.isNaN(numYear)) {
+    match.year = numYear;
+  }
 
-      .select({
-        _id: 1,
+  const q = typeof search === "string" ? search.trim() : "";
 
-        name: 1,
+  if (q) {
+    match.name = {
+      $regex: q,
+      $options: "i",
+    };
+  }
 
-        slug: 1,
+  /* ---------------- AGGREGATION ---------------- */
 
-        launchYear: 1,
+  const res = await VehicleVariant.aggregate([
+    { $match: match },
 
-        fuelTypeIds: 1,
+    /* Fuel Type join */
+    {
+      $lookup: {
+        from: "vehiclefueltypes",
+        localField: "fuelTypeId",
+        foreignField: "_id",
+        as: "fuelType",
+      },
+    },
+    { $unwind: { path: "$fuelType", preserveNullAndEmptyArrays: true } },
 
-        transmissionIds: 1,
-      })
+    /* Transmission join */
+    {
+      $lookup: {
+        from: "vehicletransmissions",
+        localField: "transmissionId",
+        foreignField: "_id",
+        as: "transmission",
+      },
+    },
+    { $unwind: { path: "$transmission", preserveNullAndEmptyArrays: true } },
 
-      .populate({
-        path: "fuelTypeIds",
+    /* Sorting */
+    { $sort: { year: -1, name: 1 } },
+  ]);
 
-      select: "_id slug name icon description",
-      })
+  /* ---------------- RESPONSE MAP ---------------- */
 
-      .populate({
-        path: "transmissionIds",
+  return res.map((v) => ({
+    id: v._id,
+    ...v,
 
-        select: "_id slug name icon description",
-      })
+    fuelType: v.fuelType
+      ? {
+          id: v.fuelType._id,
+          slug: v.fuelType.slug,
+          name: v.fuelType.name,
+          icon: v.fuelType.icon,
+          description: v.fuelType.description,
+        }
+      : null,
 
-      .sort({
-        name: 1,
-      })
-
-      .lean();
-
-  const models = res.map(
-    ({
-      _id,
-
-      fuelTypeIds,
-
-      transmissionIds,
-
-      ...rest
-    }) => ({
-
-      id: _id,
-
-      ...rest,
-
-      fuelTypes:
-        fuelTypeIds.map(
-          (fuel) => ({
-            id: fuel._id,
-
-            slug:
-              fuel.slug,
-
-            name:
-              fuel.name,
-
-            icon:
-              fuel.icon,
-
-            description:
-              fuel.description,
-          })
-        ),
-
-      transmissions:
-        transmissionIds.map(
-          (transmission) => ({
-            id: transmission._id,
-
-            slug:
-              transmission.slug,
-
-            name:
-              transmission.name,
-
-            icon:
-              transmission.icon,
-
-            description:
-              transmission.description,
-          })
-        ),
-    })
-  );
-
-  return models;
+    transmission: v.transmission
+      ? {
+          id: v.transmission._id,
+          slug: v.transmission.slug,
+          name: v.transmission.name,
+          icon: v.transmission.icon,
+          description: v.transmission.description,
+        }
+      : null,
+  }));
 }
 }
 
