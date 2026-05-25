@@ -18,7 +18,7 @@ import { seedVehicleTransmissions } from "./vehicle-transmission.js";
 
 
 
-async function runSeeders() {
+export async function runSeeders() {
 
   try {
 
