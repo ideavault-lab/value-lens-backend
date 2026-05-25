@@ -10,7 +10,6 @@ import {
   HTTP_STATUS,
 } from "./shared/utils/api-response.js";
 import { connectDatabase } from "./config/database.js";
-import { runSeeders } from "./seeders/run-seeders.js";
 
 const __dirname = dirname(
   fileURLToPath(import.meta.url)
