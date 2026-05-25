@@ -10,6 +10,7 @@ import {
   HTTP_STATUS,
 } from "./shared/utils/api-response.js";
 import { connectDatabase } from "./config/database.js";
+import { runSeeders } from "./seeders/run-seeders.js";
 
 const __dirname = dirname(
   fileURLToPath(import.meta.url)
@@ -20,7 +21,6 @@ export async function buildApp(opts = {}) {
 
   // CONNECT DATABASE
   await connectDatabase();
-  await import("./seeders/run-seeders.js");
 
   const app = Fastify({
     logger: opts.logger ?? {
