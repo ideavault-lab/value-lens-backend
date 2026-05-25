@@ -21,7 +21,6 @@ export async function buildApp(opts = {}) {
 
   // CONNECT DATABASE
   await connectDatabase();
-  await runSeeders();
 
   const app = Fastify({
     logger: opts.logger ?? {
