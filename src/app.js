@@ -20,6 +20,7 @@ export async function buildApp(opts = {}) {
 
   // CONNECT DATABASE
   await connectDatabase();
+  await import("./seeders/run-seeders.js");
 
   const app = Fastify({
     logger: opts.logger ?? {
