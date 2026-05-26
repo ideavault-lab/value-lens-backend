@@ -55,3 +55,13 @@ export const internalError = (
     message,
     "Internal Server Error"
   );
+
+
+export const internalServerError = (
+  message = "Internal Server Error"
+) =>
+  new ApiError(
+    HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    message,
+    "Internal Server Error"
+  );
