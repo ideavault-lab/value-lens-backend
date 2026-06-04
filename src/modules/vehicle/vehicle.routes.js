@@ -38,6 +38,10 @@ async function vehicleRoutes(app) {
   );
 
 app.get("/km-driven-insights", kmDrivenController.getInsights);
+
+// app.post("/assessment/create-draft", vehicleController.createDraftAssessment);
+
+// app.get("/get-valuation", vehicleController.getValuation);
 }
 
 export default vehicleRoutes;

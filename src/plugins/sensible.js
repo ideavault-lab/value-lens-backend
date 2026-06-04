@@ -1,6 +1,8 @@
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import redis from "@fastify/redis";
+
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 
@@ -24,6 +26,26 @@ export async function registerPlugins(app) {
       message: `Rate limit exceeded. Try again in ${context.after}.`,
     }),
   });
+
+   // ====================== REDIS SETUP ======================
+    // We check if REDIS_URL exists in environment variables
+    if (process.env.REDIS_URL) {
+      try {
+        await app.register(redis, {
+          url: process.env.REDIS_URL,     // Render will give you this
+          // You can add more options if needed:
+          // maxRetriesPerRequest: 3,
+          // connectTimeout: 5000,
+        });
+        
+        console.log("✅ Redis connected successfully");
+      } catch (err) {
+        console.error("❌ Redis connection failed:", err.message);
+        // Don't crash the app if Redis fails (good practice)
+      }
+    } else {
+      console.warn("⚠️ REDIS_URL is not set. Redis is disabled.");
+    }
 
   // ── API docs (Swagger / OpenAPI) ───────────────────────────────────────────
   await app.register(swagger, {
