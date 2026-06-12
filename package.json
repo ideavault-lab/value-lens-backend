@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon src/server.js",
-    "seed": "node src/seeders/run-seeders.js"
+    "seed": "node src/seeders/run-seeders.js",
+    "test:valuation": "node src/modules/valuation/services/ai-service.js"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +21,7 @@
     "@fastify/redis": "^7.2.0",
     "@fastify/swagger": "^9.7.0",
     "@fastify/swagger-ui": "^5.2.6",
+    "@mistralai/mistralai": "^2.2.5",
     "dotenv": "^17.4.2",
     "fastify": "^5.8.5",
     "mongoose": "^9.6.2",

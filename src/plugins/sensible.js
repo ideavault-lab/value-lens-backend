@@ -6,6 +6,8 @@ import redis from "@fastify/redis";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
 
+import { env } from "../config/env.js";
+
 export async function registerPlugins(app) {
   // ── Security ───────────────────────────────────────────────────────────────
   await app.register(helmet, {
@@ -18,7 +20,7 @@ export async function registerPlugins(app) {
   });
 
   await app.register(rateLimit, {
-    max: parseInt(process.env.RATE_LIMIT_MAX ?? "100", 10),
+    max: parseInt(env.RATE_LIMIT_MAX ?? "100", 10),
     timeWindow: "1 minute",
     errorResponseBuilder: (request, context) => ({
       statusCode: 429,
@@ -29,10 +31,10 @@ export async function registerPlugins(app) {
 
    // ====================== REDIS SETUP ======================
     // We check if REDIS_URL exists in environment variables
-    if (process.env.REDIS_URL) {
+    if (env.REDIS_URL) {
       try {
         await app.register(redis, {
-          url: process.env.REDIS_URL,     // Render will give you this
+          url: env.REDIS_URL,     // Render will give you this
           // You can add more options if needed:
           // maxRetriesPerRequest: 3,
           // connectTimeout: 5000,
