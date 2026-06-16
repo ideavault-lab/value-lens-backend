@@ -24,6 +24,8 @@ import valuationResultService from "../services/valuation-result.service.js";
 
 class CarEngine {
   async calculate(form) {
+
+    console.time("[CarEngine] Total calculation time" , form);
     // ── Step 1: Market analysis ───────────────────────────────────────────
     const marketData = await marketAnalyzerService.getComparableCars(form);
 
