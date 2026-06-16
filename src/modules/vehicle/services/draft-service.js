@@ -100,7 +100,7 @@ class DraftService {
         pipeline.expire(indexKey(userId), DRAFT_TTL_SECONDS);
         await pipeline.exec();
 
-        return { id: `${userId}-${targetSlot}`, slotId: targetSlot, ...draft };
+        return { draftId: `${userId}-${targetSlot}`, slotId: targetSlot, ...draft };
     }
 
     /**

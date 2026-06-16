@@ -1,24 +1,69 @@
-import { successResponse }
-  from "../../../shared/utils/api-response.js";
-import valuationService from "../services/valuation.service.js";
+import DraftService
+  from "../../vehicle/services/draft-service.js";
 
+
+
+import {
+  successResponse,
+} from "../../../shared/utils/api-response.js";
+
+import estimatorService
+  from "../services/valuation.service.js";
 
 class EstimatorController {
 
-  async estimate(request, reply) {
+  async getValuation(request, reply) {
 
-   const form =
-    request.body;
+    const { draftId } =
+      request.params;
 
-  const data =
-    await valuationService
-      .estimate(form);
+    const userId = 1;
+
+    const draftService =
+      new DraftService(
+        request.server.redis
+      );
+
+    const draft =
+      await draftService.getDraft(
+        userId,
+        draftId
+      );
+
+    if (!draft) {
+
+      return reply.status(404).send({
+        status: false,
+        message: "Draft not found",
+      });
+    }
+
+    const valuation =
+      await estimatorService
+        .estimateFromDraft(
+          draft
+        );
 
     return reply.send(
       successResponse({
+        data: valuation,
+        message:
+          "Valuation generated successfully",
+      })
+    );
+  }
 
-        data,
+  async estimate(request, reply) {
 
+    const valuation =
+      await estimatorService
+        .estimate(
+          request.body
+        );
+
+    return reply.send(
+      successResponse({
+        data: valuation,
         message:
           "Vehicle resale value estimated successfully",
       })
