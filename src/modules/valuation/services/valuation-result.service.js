@@ -1,69 +1,34 @@
-/**
- * ValuationResult
- *
- * Assembles the final response object from all engine outputs.
- * Single place that defines the API response shape — never leak
- * internal fields (like _similarityScore) to the client.
- */
+// src/valuation/services/valuation-result.service.js
 
 class ValuationResult {
-  /**
-   * @param {object} params
-   * @param {number} params.basePrice        - from PriceScorer
-   * @param {object} params.pricingFactors   - from PriceScorer
-   * @param {object} params.marketData       - from MarketAnalyzer
-   * @param {object} params.confidenceResult - from ConfidenceBuilder
-   * @param {object} params.aiInsights       - from ValuationAIService
-   * @param {object} params.form             - original form
-   * @returns {object}
-   */
-  build({
-    basePrice,
-    pricingFactors,
-    marketData,
-    confidenceResult,
-    aiInsights,
-    form,
-  }) {
-    // The final recommended price is AI's adjusted price (it had full context).
-    // Fall back to basePrice if AI didn't change it meaningfully.
-    const recommendedPrice =
-      aiInsights?.adjustedPrice ?? basePrice;
+  build({ basePrice, pricingFactors, marketData, confidenceResult, aiInsights, form }) {
+    const recommendedPrice = aiInsights?.adjustedPrice ?? basePrice;
 
-    const warnings = this._collectWarnings({
-      form,
-      marketData,
-      confidenceResult,
-    });
+    const warnings = this._collectWarnings({ form, marketData, confidenceResult });
 
     return {
-      // ── Core output ──────────────────────────────────────────────────────
-      estimatedPrice:    recommendedPrice,
-      priceRange:        confidenceResult.priceRange,
-      confidence:        {
-        score:           confidenceResult.confidence,
-        label:           confidenceResult.label,
-        dataQuality:     confidenceResult.dataQuality,
+      estimatedPrice: recommendedPrice,
+      priceRange:     confidenceResult.priceRange,
+
+      confidence: {
+        score:       confidenceResult.confidence,
+        label:       confidenceResult.label,
+        dataQuality: confidenceResult.dataQuality,   // now a clean string
+        dataStats:   confidenceResult.dataStats,      // diagnostic object, separate field
       },
 
-      // ── Market summary ───────────────────────────────────────────────────
       marketSummary: marketData.sampleSize > 0
         ? {
-            sampleSize:        marketData.sampleSize,
-            tierUsed:          marketData.tierUsed,
-            marketPriceRange:  {
-              low:   marketData.minPrice,
-              high:  marketData.maxPrice,
-            },
+            sampleSize:         marketData.sampleSize,
+            tierUsed:           marketData.tierUsed,
+            marketPriceRange:   { low: marketData.minPrice, high: marketData.maxPrice },
             medianListingPrice: marketData.medianPrice,
             weightedAvgPrice:   marketData.weightedAvgPrice,
           }
         : null,
 
-      // ── Comparable listings (for UI display) ─────────────────────────────
       comparables: marketData.topComparables ?? [],
 
-      // ── Factor breakdown (for transparency UI) ───────────────────────────
       depreciationFactors: {
         vehicleAge:          pricingFactors.vehicleAge,
         kmAdjustmentPct:     pricingFactors.kmAdjustmentPct,
@@ -74,28 +39,25 @@ class ValuationResult {
         marketWeight:        pricingFactors.marketWeight,
       },
 
-      // ── AI insights ───────────────────────────────────────────────────────
       aiInsights: {
-        priceSentiment:      aiInsights.priceSentiment,
-        strengths:           aiInsights.strengths,
-        weaknesses:          aiInsights.weaknesses,
-        marketObservations:  aiInsights.marketObservations,
-        sellerTip:           aiInsights.sellerTip,
-        buyerTip:            aiInsights.buyerTip,
-        reasoning:           aiInsights.reasoning,
+        priceSentiment:     aiInsights?.priceSentiment ?? "neutral",
+        strengths:          aiInsights?.strengths ?? [],
+        weaknesses:         aiInsights?.weaknesses ?? [],
+        marketObservations: aiInsights?.marketObservations ?? [],
+        sellerTip:          aiInsights?.sellerTip ?? null,
+        buyerTip:           aiInsights?.buyerTip ?? null,
+        reasoning:          aiInsights?.reasoning ?? null,
       },
 
-      // ── Warnings ──────────────────────────────────────────────────────────
       warnings,
 
-      // ── Meta ─────────────────────────────────────────────────────────────
       meta: {
-        vehicleType:   form.vehicleType?.slug ?? "car",
-        brand:         form.brand?.name,
-        model:         form.model?.name,
-        variant:       form.variant?.name,
-        year:          form.year ?? form.variant?.year,
-        estimatedAt:   new Date().toISOString(),
+        vehicleType: form.vehicleType?.slug ?? "car",
+        brand:       form.brand?.name,
+        model:       form.model?.name,
+        variant:     form.variant?.name,
+        year:        form.year ?? form.variant?.year,
+        estimatedAt: new Date().toISOString(),
       },
     };
   }
@@ -119,7 +81,7 @@ class ValuationResult {
     }
 
     if ((form.conditionIssues?.length ?? 0) > 0) {
-      warnings.push(`Reported condition issues may further impact resale value.`);
+      warnings.push("Reported condition issues may further impact resale value.");
     }
 
     if (marketData.warning) {
