@@ -9,47 +9,43 @@ import {
 
 import estimatorService
   from "../services/valuation.service.js";
+import valuationCacheService from "../services/valuation-cache.service.js";
 
 class EstimatorController {
 
   async getValuation(request, reply) {
+    const { draftId } = request.params;
+    const userId = 1; // replace with real auth later
 
-    const { draftId } =
-      request.params;
-
-    const userId = 1;
-
-    const draftService =
-      new DraftService(
-        request.server.redis
+    // ── 1. Check MongoDB cache first ─────────────────────────────────────
+    const cached = await valuationCacheService.get(draftId);
+    if (cached) {
+      return reply.send(
+        successResponse({ data: cached, message: "Valuation retrieved from cache" })
       );
-
-    const draft =
-      await draftService.getDraft(
-        userId,
-        draftId
-      );
-
-    if (!draft) {
-
-      return reply.status(404).send({
-        status: false,
-        message: "Draft not found",
-      });
     }
 
-    const valuation =
-      await estimatorService
-        .estimateFromDraft(
-          draft
-        );
+    // ── 2. Load draft from Redis ──────────────────────────────────────────
+    const draftService = new DraftService(request.server.redis);
+    const draft = await draftService.getDraft(userId, draftId);
+
+    if (!draft) {
+      return reply.status(404).send({ status: false, message: "Draft not found" });
+    }
+
+    // ── 3. Run engine ─────────────────────────────────────────────────────
+    const result = await estimatorService.estimateFromDraft(draft);
+
+    // ── 4. Persist result ─────────────────────────────────────────────────
+    await valuationCacheService.save({
+      draftId,
+     vehicleType: draft.vehicleType ?? "car",
+      form: draft,
+      engineResult:result,
+    });
 
     return reply.send(
-      successResponse({
-        data: valuation,
-        message:
-          "Valuation generated successfully",
-      })
+      successResponse({ data: result, message: "Valuation generated successfully" })
     );
   }
 
