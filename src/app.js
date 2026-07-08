@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 
 import { registerPlugins } from "./plugins/sensible.js";
+import sessionPlugin  from "./plugins/session.js";
 import routes from "./routes/routes.js";
 
 import {
@@ -48,7 +49,7 @@ export async function buildApp(opts = {}) {
   // Register Plugins
   // ─────────────────────────────────────────────
   await registerPlugins(app);
-
+  await sessionPlugin(app);
   // ─────────────────────────────────────────────
   // Register API Routes
   // FINAL PREFIX:
