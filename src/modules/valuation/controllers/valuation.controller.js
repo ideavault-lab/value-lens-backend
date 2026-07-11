@@ -13,6 +13,31 @@ import valuationCacheService from "../services/valuation-cache.service.js";
 
 class EstimatorController {
 
+  async getValuationMeta(request, reply) {
+    const { draftId } = request.params;
+    const userId = 1;
+
+    const meta = await estimatorService.getDraftMeta({
+      userId,
+      draftId,
+      redis: request.server.redis,
+    });
+
+    if (!meta) {
+      return reply.status(404).send({
+        status: false,
+        message: "Draft not found",
+      });
+    }
+
+    return reply.send(
+      successResponse({
+        data: meta,
+        message: "Vehicle metadata retrieved successfully",
+      })
+    );
+  }
+
   async getValuation(request, reply) {
     const { draftId } = request.params;
     const userId = 1; // replace with real auth later
@@ -39,9 +64,9 @@ class EstimatorController {
     // ── 4. Persist result ─────────────────────────────────────────────────
     await valuationCacheService.save({
       draftId,
-     vehicleType: draft.vehicleType ?? "car",
+      vehicleType: draft.vehicleType ?? "car",
       form: draft,
-      engineResult:result,
+      engineResult: result,
     });
 
     return reply.send(
