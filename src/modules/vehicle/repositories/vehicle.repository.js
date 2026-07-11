@@ -147,7 +147,7 @@ class VehicleRepository {
         })
 
         .lean();
- 
+
     return res.map(
       ({
         _id,
@@ -157,109 +157,198 @@ class VehicleRepository {
         ...rest,
       })
     );
-  }async getVariants(type, brandId, modelId, year, search = "") {
-  const vehicleType = await VehicleType.findOne({
-    slug: type,
-    enabled: true,
-  }).lean();
-
-  if (!vehicleType) throw notFound("Vehicle type not found");
-
-  const brand = await VehicleBrand.findOne({
-    _id: brandId,
-    vehicleTypeId: vehicleType._id,
-    enabled: true,
-  }).lean();
-
-  if (!brand) throw notFound("Brand not found");
-
-  const model = await VehicleModel.findOne({
-    _id: modelId,
-    brandId: brand._id,
-    enabled: true,
-  }).lean();
-
-  if (!model) throw notFound("Model not found");
-
-  /* ---------------- FILTER ---------------- */
-
-  const match = {
-    modelId: model._id,
-    enabled: true,
-  };
-
-  const numYear = Number(year);
-  if (year !== undefined && year !== null && year !== "" && !Number.isNaN(numYear)) {
-    match.year = numYear;
   }
+  async getVariants(type, brandId, modelId, year, search = "") {
+    const vehicleType = await VehicleType.findOne({
+      slug: type,
+      enabled: true,
+    }).lean();
 
-  const q = typeof search === "string" ? search.trim() : "";
+    if (!vehicleType) throw notFound("Vehicle type not found");
 
-  if (q) {
-    match.name = {
-      $regex: q,
-      $options: "i",
+    const brand = await VehicleBrand.findOne({
+      _id: brandId,
+      vehicleTypeId: vehicleType._id,
+      enabled: true,
+    }).lean();
+
+    if (!brand) throw notFound("Brand not found");
+
+    const model = await VehicleModel.findOne({
+      _id: modelId,
+      brandId: brand._id,
+      enabled: true,
+    }).lean();
+
+    if (!model) throw notFound("Model not found");
+
+    /* ---------------- FILTER ---------------- */
+
+    const match = {
+      modelId: model._id,
+      enabled: true,
     };
-  }
 
-  /* ---------------- AGGREGATION ---------------- */
+    const numYear = Number(year);
+    if (year !== undefined && year !== null && year !== "" && !Number.isNaN(numYear)) {
+      match.year = numYear;
+    }
 
-  const res = await VehicleVariant.aggregate([
-    { $match: match },
+    const q = typeof search === "string" ? search.trim() : "";
 
-    /* Fuel Type join */
-    {
-      $lookup: {
-        from: "vehiclefueltypes",
-        localField: "fuelTypeId",
-        foreignField: "_id",
-        as: "fuelType",
+    if (q) {
+      match.name = {
+        $regex: q,
+        $options: "i",
+      };
+    }
+
+    /* ---------------- AGGREGATION ---------------- */
+
+    const res = await VehicleVariant.aggregate([
+      { $match: match },
+
+      /* Fuel Type join */
+      {
+        $lookup: {
+          from: "vehiclefueltypes",
+          localField: "fuelTypeId",
+          foreignField: "_id",
+          as: "fuelType",
+        },
       },
-    },
-    { $unwind: { path: "$fuelType", preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: "$fuelType", preserveNullAndEmptyArrays: true } },
 
-    /* Transmission join */
-    {
-      $lookup: {
-        from: "vehicletransmissions",
-        localField: "transmissionId",
-        foreignField: "_id",
-        as: "transmission",
+      /* Transmission join */
+      {
+        $lookup: {
+          from: "vehicletransmissions",
+          localField: "transmissionId",
+          foreignField: "_id",
+          as: "transmission",
+        },
       },
-    },
-    { $unwind: { path: "$transmission", preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: "$transmission", preserveNullAndEmptyArrays: true } },
 
-    /* Sorting */
-    { $sort: { year: -1, name: 1 } },
-  ]);
+      /* Sorting */
+      { $sort: { year: -1, name: 1 } },
+    ]);
 
-  /* ---------------- RESPONSE MAP ---------------- */
+    /* ---------------- RESPONSE MAP ---------------- */
 
-  return res.map((v) => ({
-    id: v._id,
-    ...v,
+    return res.map((v) => ({
+      id: v._id,
+      ...v,
 
-    fuelType: v.fuelType
-      ? {
+      fuelType: v.fuelType
+        ? {
           id: v.fuelType._id,
           slug: v.fuelType.slug,
           name: v.fuelType.name,
           icon: v.fuelType.icon,
           description: v.fuelType.description,
         }
-      : null,
+        : null,
 
-    transmission: v.transmission
-      ? {
+      transmission: v.transmission
+        ? {
           id: v.transmission._id,
           slug: v.transmission.slug,
           name: v.transmission.name,
           icon: v.transmission.icon,
           description: v.transmission.description,
         }
-      : null,
-  }));
-}
+        : null,
+    }));
+  }
+
+
+  async getDraftMeta({
+    vehicleType,
+    brandId,
+    modelId,
+    variantId,
+  }) {
+
+    const type = await VehicleType.findOne({
+      slug: vehicleType,
+      enabled: true,
+    }).lean();
+
+    if (!type) {
+      throw notFound("Vehicle type not found");
+    }
+
+    const [brand, model, variant] = await Promise.all([
+
+      VehicleBrand.findOne({
+        _id: brandId,
+        vehicleTypeId: type._id,
+        enabled: true,
+      })
+        .select("name logo")
+        .lean(),
+
+      VehicleModel.findOne({
+        _id: modelId,
+        brandId,
+        enabled: true,
+      })
+        .select("name")
+        .lean(),
+
+
+      VehicleVariant.findById(variantId)
+        .populate({
+          path: "fuelTypeId",
+          select: "name",
+        })
+        .populate({
+          path: "transmissionId",
+          select: "name",
+        })
+        .select("name year fuelTypeId transmissionId")
+        .lean(),
+
+    ]);
+
+    return {
+
+      brand: brand
+        ? {
+          id: brand._id,
+          name: brand.name,
+          logo: brand.logo,
+        }
+        : null,
+
+      model: model
+        ? {
+          id: model._id,
+          name: model.name,
+        }
+        : null,
+
+      variant: variant
+        ? {
+          id: variant._id,
+          name: variant.name,
+          fuelType: variant.fuelTypeId
+            ? variant.fuelTypeId.name
+
+            : null,
+          transmission: variant.transmissionId
+            ?
+            variant.transmissionId.name
+
+            : null,
+        }
+        : null,
+
+      year: variant?.year,
+    };
+  }
+
 }
 
 export default new VehicleRepository();

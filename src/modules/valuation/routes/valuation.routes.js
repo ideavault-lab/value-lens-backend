@@ -6,6 +6,11 @@ async function valuationRoutes(app) {
     "/drafts/:draftId/estimate",
     valuationController.getValuation
   );
+
+  app.get(
+    "/drafts/:draftId/meta",
+    valuationController.getValuationMeta
+  );
 }
 
 export default valuationRoutes;
