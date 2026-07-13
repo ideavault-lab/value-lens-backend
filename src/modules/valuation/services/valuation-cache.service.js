@@ -64,6 +64,7 @@ class ValuationCacheService {
       await valuationResultRepository
         .findByDraftId(draftId);
 
+
     if (!cached) return null;
 
     console.info(

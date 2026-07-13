@@ -1,62 +1,56 @@
 // src/valuation/services/valuation-result.service.js
 
 class ValuationResult {
-  build({ basePrice, pricingFactors, marketData, confidenceResult, aiInsights, form }) {
+  build({ basePrice, priceFactors, marketData, confidenceResult, aiInsights, form }) {
     const recommendedPrice = aiInsights?.adjustedPrice ?? basePrice;
-
     const warnings = this._collectWarnings({ form, marketData, confidenceResult });
 
     return {
       estimatedPrice: recommendedPrice,
-      priceRange:     confidenceResult.priceRange,
+      priceRange: confidenceResult.priceRange,
 
       confidence: {
-        score:       confidenceResult.confidence,
-        label:       confidenceResult.label,
-        dataQuality: confidenceResult.dataQuality,   // now a clean string
-        dataStats:   confidenceResult.dataStats,      // diagnostic object, separate field
+        score: confidenceResult.confidence,
+        label: confidenceResult.label,
+        dataQuality: confidenceResult.dataQuality,
+        dataStats: confidenceResult.dataStats,
       },
 
       marketSummary: marketData.sampleSize > 0
         ? {
-            sampleSize:         marketData.sampleSize,
-            tierUsed:           marketData.tierUsed,
-            marketPriceRange:   { low: marketData.minPrice, high: marketData.maxPrice },
+            sampleSize: marketData.sampleSize,
+            tierUsed: marketData.tierUsed,
+            marketPriceRange: { low: marketData.minPrice, high: marketData.maxPrice },
             medianListingPrice: marketData.medianPrice,
-            weightedAvgPrice:   marketData.weightedAvgPrice,
+            weightedAvgPrice: marketData.weightedAvgPrice,
           }
         : null,
 
       comparables: marketData.topComparables ?? [],
 
-      depreciationFactors: {
-        vehicleAge:          pricingFactors.vehicleAge,
-        kmAdjustmentPct:     pricingFactors.kmAdjustmentPct,
-        conditionMultiplier: pricingFactors.conditionMultiplier,
-        ownershipPenaltyPct: pricingFactors.ownershipPenaltyPct,
-        fuelAdjustmentPct:   pricingFactors.fuelAdjustmentPct,
-        transAdjustmentPct:  pricingFactors.transAdjustmentPct,
-        marketWeight:        pricingFactors.marketWeight,
-      },
+      // Single factors array — real computed % per step, plus an AI note per factor.
+      priceFactors: priceFactors.map((f) => ({
+        ...f,
+        note: aiInsights?.factorNotes?.[f.key] ?? null,
+      })),
 
       aiInsights: {
-        priceSentiment:     aiInsights?.priceSentiment ?? "neutral",
-        strengths:          aiInsights?.strengths ?? [],
-        weaknesses:         aiInsights?.weaknesses ?? [],
-        marketObservations: aiInsights?.marketObservations ?? [],
-        sellerTip:          aiInsights?.sellerTip ?? null,
-        buyerTip:           aiInsights?.buyerTip ?? null,
-        reasoning:          aiInsights?.reasoning ?? null,
+        priceSentiment: aiInsights?.priceSentiment ?? "neutral",
+        strengths: aiInsights?.strengths ?? [],
+        weaknesses: aiInsights?.weaknesses ?? [],
+        sellerTip: aiInsights?.sellerTip ?? null,
+        buyerTip: aiInsights?.buyerTip ?? null,
+        reasoning: aiInsights?.reasoning ?? null,
       },
 
       warnings,
 
       meta: {
         vehicleType: form.vehicleType?.slug ?? "car",
-        brand:       form.brand?.name,
-        model:       form.model?.name,
-        variant:     form.variant?.name,
-        year:        form.year ?? form.variant?.year,
+        brand: form.brand?.name,
+        model: form.model?.name,
+        variant: form.variant?.name,
+        year: form.year ?? form.variant?.year,
         estimatedAt: new Date().toISOString(),
       },
     };

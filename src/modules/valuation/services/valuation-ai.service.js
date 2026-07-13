@@ -1,192 +1,122 @@
+// src/valuation/services/valuation-ai.service.js
+
 import valuationAi from "../../../services/ai/valuation-ai.js";
 
 class ValuationAIService {
-    constructor() {
-        this.provider = valuationAi._provider;
+  constructor() {
+    this.provider = valuationAi._provider;
+  }
+
+  async analyze(context) {
+    const system = this.buildSystemPrompt();
+    const user = this.buildUserPrompt(context);
+
+    try {
+      const raw = await this.provider.chat({ system, user, maxTokens: 1500 });
+      return this.parse(raw, context.basePrice);
+    } catch (error) {
+      console.error("[ValuationAIService] provider error:", error.message);
+      return this.fallback(context.basePrice);
     }
+  }
 
-    async analyze(context) {
-
-        const system =
-            this.buildSystemPrompt();
-
-        const user =
-            this.buildUserPrompt(context);
-
-        try {
-
-            const raw =
-                await this.provider.chat({
-                    system,
-                    user,
-                    maxTokens: 1500,
-                });
-
-            return this.parse(raw, context.basePrice);
-
-        } catch (error) {
-
-            console.error(
-                "[ValuationAIService]",
-                error.message
-            );
-
-            return this.fallback(
-                context.basePrice
-            );
-        }
-    }
-
-    buildSystemPrompt() {
-        return `
+  buildSystemPrompt() {
+    return `
 You are an expert Indian used car valuation analyst.
 
-Your job is to improve an already calculated valuation.
-
-You DO NOT replace the formula engine.
-
-You REVIEW the formula result.
+Your job is to review an already calculated valuation and add context — you do not have live market data, so you must not invent prices, listings, or trends you cannot see.
 
 Rules:
 
-1. Formula price is the primary source.
-2. Adjust maximum ±10%.
-3. Never invent market trends.
-4. Never mention lack of data.
-5. Consider:
-   - vehicle age
-   - mileage
-   - ownership
-   - condition
-   - fuel type
-   - transmission
-   - brand resale strength
-   - segment demand
-6. Return ONLY valid JSON.
+1. The formula price is the primary source of truth. Do not contradict it without reason.
+2. Adjust the price by a maximum of ±10% from basePrice, and only when the vehicle's specific attributes clearly justify it.
+3. Never invent market trends, competitor prices, or listing counts.
+4. Never claim to have real-time or live pricing data.
+5. Base your reasoning only on the vehicle attributes and pre-computed factors given to you:
+   - vehicle age, mileage, ownership, condition, fuel type, transmission
+   - general, well-established brand resale reputation in India (e.g. Maruti/Toyota hold value; this is general knowledge, not live data)
+   - typical segment demand patterns (e.g. compact SUVs and MUVs are in demand)
+6. For "factorNotes", write one short, specific sentence per factor key explaining what that factor's number means for this vehicle.
+7. Return ONLY valid JSON. No markdown code fences, no preamble, no trailing text.
 `;
-    }
+  }
 
-    buildUserPrompt({
-        form,
+  buildUserPrompt({ form, basePrice, pricingMeta, priceFactors, confidence, marketData }) {
+    return JSON.stringify({
+      vehicle: {
+        brand: form.brand.name,
+        model: form.model.name,
+        variant: form.variant.name,
+        year: form.year,
+        fuel: form.variant.fuelType?.name,
+        transmission: form.variant.transmission?.name,
+        kmDriven: form.kmDriven,
+        ownership: form.ownership.id,
+        condition: form.condition.id,
+      },
+
+      valuation: {
         basePrice,
-        pricingFactors,
-        confidence,
-        marketData,
-    }) {
+        confidence: confidence.confidence,
+        formulaPrice: pricingMeta.formulaPrice,
+      },
 
-        return JSON.stringify({
-            vehicle: {
-                brand: form.brand.name,
-                model: form.model.name,
-                variant: form.variant.name,
-                year: form.year,
-                fuel: form.variant.fuelType?.name,
-                transmission:
-                    form.variant.transmission?.name,
-                kmDriven:
-                    form.kmDriven,
-                ownership:
-                    form.ownership.id,
-                condition:
-                    form.condition.id,
-            },
+      priceFactors, // [{ key, label, value }] — the real, computed per-step % changes
 
-            valuation: {
-                basePrice,
-                confidence:
-                    confidence.confidence,
-                formulaPrice:
-                    pricingFactors.formulaPrice,
-            },
+      market: {
+        listings: marketData.sampleSize,
+        weightedAverage: marketData.weightedAvgPrice,
+      },
 
-            market: {
-                listings:
-                    marketData.sampleSize,
-                weightedAverage:
-                    marketData.weightedAvgPrice,
-            },
+      output: {
+        adjustedPrice: "number",
+        priceSentiment: "undervalued | fairly_priced | overvalued",
+        factorNotes: {
+          age: "string",
+          market: "string",
+          mileage: "string",
+          condition: "string",
+          ownership: "string",
+          fuel_transmission: "string",
+        },
+        strengths: ["string"],
+        weaknesses: ["string"],
+        sellerTip: "string",
+        buyerTip: "string",
+        reasoning: "string",
+      },
+    });
+  }
 
-            output: {
-                adjustedPrice:
-                    "number",
+  parse(raw, basePrice) {
+    try {
+      // Some providers wrap JSON in ```json fences even when told not to.
+      const cleaned = raw.replace(/```json\s*|```/g, "").trim();
+      const parsed = JSON.parse(cleaned);
 
-                priceSentiment:
-                    "undervalued | fairly_priced | overvalued",
+      const min = basePrice * 0.9;
+      const max = basePrice * 1.1;
+      parsed.adjustedPrice = Math.max(min, Math.min(Number(parsed.adjustedPrice) || basePrice, max));
 
-                strengths:
-                    ["string"],
-
-                weaknesses:
-                    ["string"],
-
-                sellerTip:
-                    "string",
-
-                buyerTip:
-                    "string",
-
-                reasoning:
-                    "string",
-            },
-        });
+      return parsed;
+    } catch (err) {
+      console.error("[ValuationAIService] parse failed:", err.message, "raw:", raw);
+      return this.fallback(basePrice);
     }
+  }
 
-    parse(raw, basePrice) {
-
-        try {
-
-            const parsed =
-                JSON.parse(raw);
-
-            const min =
-                basePrice * 0.9;
-
-            const max =
-                basePrice * 1.1;
-
-            parsed.adjustedPrice =
-                Math.max(
-                    min,
-                    Math.min(
-                        parsed.adjustedPrice,
-                        max
-                    )
-                );
-
-            return parsed;
-
-        } catch {
-
-            return this.fallback(
-                basePrice
-            );
-        }
-    }
-
-    fallback(basePrice) {
-
-        return {
-
-            adjustedPrice:
-                basePrice,
-
-            priceSentiment:
-                "fairly_priced",
-
-            strengths: [],
-
-            weaknesses: [],
-
-            sellerTip:
-                "Maintain service records.",
-
-            buyerTip:
-                "Inspect thoroughly.",
-
-            reasoning:
-                "Formula-based valuation used.",
-        };
-    }
+  fallback(basePrice) {
+    return {
+      adjustedPrice: basePrice,
+      priceSentiment: "fairly_priced",
+      factorNotes: {},
+      strengths: [],
+      weaknesses: [],
+      sellerTip: "Maintain service records.",
+      buyerTip: "Inspect thoroughly.",
+      reasoning: "Formula-based valuation used.",
+    };
+  }
 }
 
 export default new ValuationAIService();
