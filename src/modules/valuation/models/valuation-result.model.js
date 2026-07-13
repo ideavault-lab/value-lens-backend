@@ -15,12 +15,12 @@ const PriceRangeSchema = new Schema(
 
 const ConfidenceSchema = new Schema(
   {
-    score:       { type: Number, min: 0, max: 100 },
-    label:       { type: String, enum: ["Low", "Medium", "High", "Very High"] },
+    score: { type: Number, min: 0, max: 100 },
+    label: { type: String, enum: ["Low", "Medium", "High", "Very High"] },
     dataQuality: { type: String, enum: ["poor", "fair", "good", "excellent"] },
     dataStats: {
-      sampleSize:         Number,
-      tierUsed:           Number,
+      sampleSize: Number,
+      tierUsed: Number,
       topSimilarityScore: Number,
     },
   },
@@ -29,30 +29,44 @@ const ConfidenceSchema = new Schema(
 
 const DepreciationFactorsSchema = new Schema(
   {
-    vehicleAge:          Number,
-    kmAdjustmentPct:     Number,
+    vehicleAge: Number,
+    kmAdjustmentPct: Number,
     conditionMultiplier: Number,
     ownershipPenaltyPct: Number,
-    fuelAdjustmentPct:   Number,
-    transAdjustmentPct:  Number,
-    marketWeight:        Number,
+    fuelAdjustmentPct: Number,
+    transAdjustmentPct: Number,
+    marketWeight: Number,
   },
   { _id: false }
 );
 
+const PriceFactorSchema = new Schema(
+  {
+    key: String,
+    label: String,
+    value: Number,
+  },
+  {
+    _id: false
+  });
+
 const CoreResultSchema = new Schema(
   {
-    estimatedPrice:      { type: Number, required: true },
-    priceRange:          PriceRangeSchema,
-    confidence:          ConfidenceSchema,
+    estimatedPrice: { type: Number, required: true },
+    priceRange: PriceRangeSchema,
+    confidence: ConfidenceSchema,
     depreciationFactors: DepreciationFactorsSchema,
-    warnings:            [String],
+    priceFactors:{
+        type:[PriceFactorSchema],
+        default:[]
+    },
+    warnings: [String],
     meta: {
       vehicleType: String,
-      brand:       String,
-      model:       String,
-      variant:     String,
-      year:        Number,
+      brand: String,
+      model: String,
+      variant: String,
+      year: Number,
       estimatedAt: Date,
     },
   },
@@ -61,40 +75,40 @@ const CoreResultSchema = new Schema(
 
 const AiInsightsSchema = new Schema(
   {
-    priceSentiment:     { type: String, enum: ["positive", "neutral", "negative"] },
-    strengths:          [String],
-    weaknesses:         [String],
+    priceSentiment: { type: String, enum: ["positive", "neutral", "negative"] },
+    strengths: [String],
+    weaknesses: [String],
     marketObservations: [String],
-    sellerTip:          String,
-    buyerTip:           String,
-    reasoning:          String,
+    sellerTip: String,
+    buyerTip: String,
+    reasoning: String,
   },
   { _id: false }
 );
 
 const MarketSummarySchema = new Schema(
   {
-    sampleSize:         Number,
-    tierUsed:           Number,
-    marketPriceRange:   PriceRangeSchema,
+    sampleSize: Number,
+    tierUsed: Number,
+    marketPriceRange: PriceRangeSchema,
     medianListingPrice: Number,
-    weightedAvgPrice:   Number,
+    weightedAvgPrice: Number,
   },
   { _id: false }
 );
 
 const ComparableSchema = new Schema(
   {
-    brand:        String,
-    model:        String,
-    year:         Number,
-    price:        Number,
-    kmDriven:     Number,
-    fuelType:     String,
+    brand: String,
+    model: String,
+    year: Number,
+    price: Number,
+    kmDriven: Number,
+    fuelType: String,
     transmission: String,
-    condition:    String,
-    location:     String,
-    listingUrl:   String,
+    condition: String,
+    location: String,
+    listingUrl: String,
   },
   { _id: false }
 );
@@ -103,22 +117,22 @@ const ComparableSchema = new Schema(
 
 const ValuationResultSchema = new Schema(
   {
-    draftId:     { type: String, required: true, unique: true },
+    draftId: { type: String, required: true, unique: true },
     vehicleType: { type: String, enum: ["car", "bike", "truck", "scooter"], default: "car" },
 
     // Denormalised for fast queries without unpacking result
-    brand:   String,
-    model:   String,
+    brand: String,
+    model: String,
     variant: String,
-    year:    Number,
+    year: Number,
 
-    result:        { type: CoreResultSchema,    required: true },
-    aiInsights:    { type: AiInsightsSchema,    default: null },
+    result: { type: CoreResultSchema, required: true },
+    aiInsights: { type: AiInsightsSchema, default: null },
     marketSummary: { type: MarketSummarySchema, default: null },
-    comparables:   { type: [ComparableSchema],  default: [] },
+    comparables: { type: [ComparableSchema], default: [] },
 
     expiresAt: { type: Date, required: true },
-    version:   { type: Number, default: 1 },
+    version: { type: Number, default: 1 },
   },
   {
     timestamps: true,
@@ -126,8 +140,8 @@ const ValuationResultSchema = new Schema(
   }
 );
 
-ValuationResultSchema.index({ draftId: 1 },                       { unique: true });
-ValuationResultSchema.index({ expiresAt: 1 },                     { expireAfterSeconds: 0 });
+ValuationResultSchema.index({ draftId: 1 }, { unique: true });
+ValuationResultSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 ValuationResultSchema.index({ vehicleType: 1, brand: 1, model: 1 });
 ValuationResultSchema.index({ vehicleType: 1, year: 1 });
 
