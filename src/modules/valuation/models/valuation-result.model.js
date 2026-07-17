@@ -49,6 +49,15 @@ const PriceFactorSchema = new Schema(
   {
     _id: false
   });
+const SegmentIntelligenceItemSchema = new Schema(
+  {
+    key: String,
+    label: String,
+    insight: String,
+  },
+  { _id: false }
+);
+
 
 const CoreResultSchema = new Schema(
   {
@@ -128,6 +137,7 @@ const ValuationResultSchema = new Schema(
 
     result: { type: CoreResultSchema, required: true },
     aiInsights: { type: AiInsightsSchema, default: null },
+    segmentIntelligence: { type: [SegmentIntelligenceItemSchema], default: [] },
     marketSummary: { type: MarketSummarySchema, default: null },
     comparables: { type: [ComparableSchema], default: [] },
 
