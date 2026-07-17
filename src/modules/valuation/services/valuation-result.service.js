@@ -1,7 +1,7 @@
 // src/valuation/services/valuation-result.service.js
 
 class ValuationResult {
-  build({ basePrice, priceFactors, marketData, confidenceResult, aiInsights, form }) {
+    build({ basePrice, priceFactors, marketData, confidenceResult, aiInsights, form }) {
     const recommendedPrice = aiInsights?.adjustedPrice ?? basePrice;
     const warnings = this._collectWarnings({ form, marketData, confidenceResult });
 
@@ -42,7 +42,7 @@ class ValuationResult {
         buyerTip: aiInsights?.buyerTip ?? null,
         reasoning: aiInsights?.reasoning ?? null,
       },
-
+      segmentIntelligence: aiInsights.segmentIntelligence ?? [],
       warnings,
 
       meta: {

@@ -21,6 +21,9 @@ class ValuationCacheFormatter {
 
       aiInsights: doc.aiInsights,
 
+      segmentIntelligence:
+        doc.segmentIntelligence ?? [], 
+
       warnings:
         doc.result?.warnings ?? [],
 
