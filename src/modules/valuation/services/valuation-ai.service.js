@@ -70,6 +70,7 @@ Rules:
       },
 
       output: {
+        baseMarketValueLakh: "price in lakhs before condition-specific adjustments", 
         adjustedPrice: "number",
         priceSentiment: "undervalued | fairly_priced | overvalued",
         factorNotes: {
