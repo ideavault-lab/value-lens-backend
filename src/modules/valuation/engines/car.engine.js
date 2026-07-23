@@ -51,13 +51,14 @@ class CarEngine {
         confidence: confidenceResult,
       });
 
+      console.log("[CarEngine] calculate: aiInsights:", aiInsights);
       // ── Step 5: Assemble final result ────────────────────────────────────
       return valuationResultService.build({
         basePrice,
         priceFactors,
         marketData,
         confidenceResult,
-        aiInsights,
+        aiInsights: aiInsights ?? {},
         form,
       });
     } finally {

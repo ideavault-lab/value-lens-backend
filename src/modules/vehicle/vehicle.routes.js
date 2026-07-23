@@ -2,6 +2,7 @@ import vehicleController from "./controllers/vehicle.controller.js";
 import { getBrandModelsSchema, getBrandsSchema, getModelVariantsSchema, getVehicleTypesSchema } from "./vehicle.schema.js";
 import kmDrivenController from "./controllers/km-driven.controller.js";
 import draftController from "./controllers/draft-controller.js"
+import suggestionController from "./controllers/suggest-alternative-controller.js";
 
 async function vehicleRoutes(app) {
   app.get(
@@ -61,6 +62,8 @@ app.get("/km-driven-insights", kmDrivenController.getInsights);
     // Clear all drafts
     app.delete("/drafts", draftController.deleteAllDrafts);
 
+    // Get the suggested alternatives for a given model
+    app.get("/alternatives", suggestionController.getSuggestedAlternatives);
 }
 
 export default vehicleRoutes;

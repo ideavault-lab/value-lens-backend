@@ -3,9 +3,12 @@
 class ValuationResult {
     build({ basePrice, priceFactors, marketData, confidenceResult, aiInsights, form }) {
     const recommendedPrice = aiInsights?.adjustedPrice ?? basePrice;
+    const baseMarketValueLakh = aiInsights?.baseMarketValueLakh ?? null;
     const warnings = this._collectWarnings({ form, marketData, confidenceResult });
+    console.log("asaasa ", aiInsights, "✌️baseMarketValueLakh", baseMarketValueLakh, "recommendedPrice", recommendedPrice, "warnings", warnings)
 
     return {
+      baseMarketValueLakh:baseMarketValueLakh,
       estimatedPrice: recommendedPrice,
       priceRange: confidenceResult.priceRange,
 

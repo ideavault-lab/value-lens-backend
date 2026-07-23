@@ -98,6 +98,18 @@ const vehicleModelSchema =
 
         default: true,
       },
+       normalizedValueLakh: {           // value normalized to age=0, i.e. "as new" baseline
+        type: Number,
+        default: null,
+      },
+      valuationSampleCount: {          // how many real valuations have fed the EMA so far
+        type: Number,
+        default: 0,
+      },
+      lastValuationAt: {
+        type: Date,
+        default: null,
+      },
     },
     {
       timestamps: true,
