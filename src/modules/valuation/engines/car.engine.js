@@ -58,7 +58,7 @@ class CarEngine {
         priceFactors,
         marketData,
         confidenceResult,
-        aiInsights: aiInsights?.output ?? {},
+        aiInsights: aiInsights ?? {},
         form,
       });
     } finally {
