@@ -1,3 +1,5 @@
+import valuationCacheService from "../../valuation/services/valuation-cache.service.js";
+import { generateDraftId, parseDraftId } from "../../../shared/utils/draft-id-utils.js";
 /**
  * Draft Service
  * Redis-backed draft storage with max-3 slots per user.
@@ -14,7 +16,7 @@ const DRAFT_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 const MAX_DRAFTS = 3;
 
 const indexKey = (userId) => `${userId}:draft:index`;
-const draftKey = (userId, slotId) => `${userId}:draft:${slotId}`;
+const draftKey = (userId, draftId) => `${userId}:draft:${draftId}`;
 
 class DraftService {
     constructor(redis) {
@@ -25,18 +27,27 @@ class DraftService {
      * Returns all slots in use for a user: [{ id, ...draftData }]
      */
     async getAllDrafts(userId) {
-        const slots = await this.redis.lrange(indexKey(userId), 0, -1);
-        if (!slots.length) return [];
+        const ids = await this.redis.lrange(indexKey(userId), 0, -1);
+
+        if (!ids.length) return [];
 
         const pipeline = this.redis.pipeline();
-        slots.forEach((slotId) => pipeline.get(draftKey(userId, slotId)));
-        const results = await pipeline.exec();
 
-        return results
-            .map(([err, raw], i) => {
+        ids.forEach(id =>
+            pipeline.get(draftKey(userId, id))
+        );
+
+        const rows = await pipeline.exec();
+
+        return rows
+            .map(([err, raw], index) => {
                 if (err || !raw) return null;
-                const parsed = JSON.parse(raw);
-                return { id: `${userId}-${slots[i]}`, slotId: slots[i], ...parsed };
+
+                return {
+                    draftId: ids[index],
+                    slot: index + 1,
+                    ...JSON.parse(raw)
+                };
             })
             .filter(Boolean);
     }
@@ -48,116 +59,220 @@ class DraftService {
      * Returns the saved draft with its id.
      */
     async saveDraft(userId, payload, draftId = null) {
+
         const redis = this.redis;
 
-        // ── UPDATE path ──────────────────────────────────────────────────────
+        //
+        // UPDATE
+        //
+
         if (draftId) {
-            const slotId = this._parseSlotId(userId, draftId);
-            const key = draftKey(userId, slotId);
+
+            const parsed = parseDraftId(draftId);
+
+            if (parsed.userId !== Number(userId)) {
+                throw Object.assign(
+                    new Error("Draft does not belong to this user"),
+                    { statusCode: 403 }
+                );
+            }
+
+            const key = draftKey(userId, parsed.draftId);
+
             const exists = await redis.exists(key);
-            if (!exists) {
-                throw Object.assign(new Error("Draft not found"), { statusCode: 404 });
-            }
 
-            const draft = { ...payload, updatedAt: new Date().toISOString() };
-            await redis.set(key, JSON.stringify(draft), "EX", DRAFT_TTL_SECONDS);
+            if (!exists)
+                throw Object.assign(
+                    new Error("Draft not found"),
+                    { statusCode: 404 }
+                );
 
-            // Refresh TTL on index list too
-            await redis.expire(indexKey(userId), DRAFT_TTL_SECONDS);
+            const old = JSON.parse(await redis.get(key));
 
-            return { id: draftId, slotId, ...draft };
+            const draft = {
+                ...old,
+                ...payload,
+                updatedAt: new Date().toISOString()
+            };
+
+            await redis.set(
+                key,
+                JSON.stringify(draft),
+                "EX",
+                DRAFT_TTL_SECONDS
+            );
+
+            return {
+                draftId,
+                ...draft
+            };
         }
 
-        // ── CREATE path ───────────────────────────────────────────────────────
-        const slots = await redis.lrange(indexKey(userId), 0, -1);
-        const usedSlots = new Set(slots.map(Number));
-        let targetSlot = null;
+        //
+        // CREATE
+        //
 
-        // Find a free slot (1–3)
-        for (let i = 1; i <= MAX_DRAFTS; i++) {
-            if (!usedSlots.has(i)) {
-                targetSlot = String(i);
-                break;
-            }
+        const ids = await redis.lrange(indexKey(userId), 0, -1);
+
+        let newId = generateDraftId(userId);
+
+        //
+        // evict oldest
+        //
+
+        if (ids.length >= MAX_DRAFTS) {
+
+            const oldest = await redis.lpop(indexKey(userId));
+
+            await redis.del(
+                draftKey(userId, oldest)
+            );
+
+            //
+            // VERY IMPORTANT
+            // delete cached valuation too
+            //
+
+            await valuationCacheService.invalidate(oldest);
         }
 
-        if (targetSlot === null) {
-            // All slots full — evict the oldest (leftmost in the index list)
-            const evictedSlot = await redis.lpop(indexKey(userId));
-            await redis.del(draftKey(userId, evictedSlot));
-            targetSlot = evictedSlot;
-        }
+        const now = new Date().toISOString();
 
         const draft = {
+
             ...payload,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+
+            createdAt: now,
+            updatedAt: now
         };
 
         const pipeline = redis.pipeline();
-        pipeline.set(draftKey(userId, targetSlot), JSON.stringify(draft), "EX", DRAFT_TTL_SECONDS);
-        pipeline.rpush(indexKey(userId), targetSlot);
-        pipeline.expire(indexKey(userId), DRAFT_TTL_SECONDS);
+
+        pipeline.set(
+            draftKey(userId, newId),
+            JSON.stringify(draft),
+            "EX",
+            DRAFT_TTL_SECONDS
+        );
+
+        pipeline.rpush(
+            indexKey(userId),
+            newId
+        );
+
+        pipeline.expire(
+            indexKey(userId),
+            DRAFT_TTL_SECONDS
+        );
+
         await pipeline.exec();
 
-        return { draftId: `${userId}-${targetSlot}`, slotId: targetSlot, ...draft };
+        return {
+            draftId: newId,
+            ...draft
+        };
     }
 
     /**
      * Get a single draft by draftId ("{userId}-{slotId}").
      */
     async getDraft(userId, draftId) {
-        const slotId = this._parseSlotId(userId, draftId);
-        const raw = await this.redis.get(draftKey(userId, slotId));
-        if (!raw) {
-            throw Object.assign(new Error("Draft not found"), { statusCode: 404 });
+
+        const parsed = parseDraftId(draftId);
+
+        if (parsed.userId !== Number(userId)) {
+            throw Object.assign(
+                new Error("Draft does not belong to this user"),
+                { statusCode: 403 }
+            );
         }
-        return { id: draftId, slotId, ...JSON.parse(raw) };
+
+        const raw = await this.redis.get(
+            draftKey(userId, parsed.draftId)
+        );
+
+        if (!raw)
+            throw Object.assign(
+                new Error("Draft not found"),
+                { statusCode: 404 }
+            );
+
+        return {
+            draftId,
+            ...JSON.parse(raw)
+        };
     }
 
     /**
      * Delete a single draft by draftId.
      */
     async deleteDraft(userId, draftId) {
-        const slotId = this._parseSlotId(userId, draftId);
-        const deleted = await this.redis.del(draftKey(userId, slotId));
-        if (!deleted) {
-            throw Object.assign(new Error("Draft not found"), { statusCode: 404 });
+        const parsed = parseDraftId(draftId);
+
+        if (parsed.userId !== Number(userId)) {
+            throw Object.assign(
+                new Error("Draft does not belong to this user"),
+                { statusCode: 403 }
+            );
         }
-        // Remove slotId from index list
-        await this.redis.lrem(indexKey(userId), 0, slotId);
-        return { id: draftId, deleted: true };
+
+        const deleted = await this.redis.del(
+            draftKey(userId, parsed.draftId)
+        );
+
+        if (!deleted)
+            throw Object.assign(
+                new Error("Draft not found"),
+                { statusCode: 404 }
+            );
+
+        await this.redis.lrem(
+            indexKey(userId),
+            0,
+            draftId
+        );
+
+        await valuationCacheService.invalidate(draftId);
+
+        return {
+            deleted: true
+        };
     }
 
     /**
      * Delete all drafts for a user.
      */
     async deleteAllDrafts(userId) {
-        const slots = await this.redis.lrange(indexKey(userId), 0, -1);
-        if (!slots.length) return { deleted: 0 };
+
+        const ids = await this.redis.lrange(
+            indexKey(userId),
+            0,
+            -1
+        );
 
         const pipeline = this.redis.pipeline();
-        slots.forEach((slotId) => pipeline.del(draftKey(userId, slotId)));
+
+        ids.forEach(id => {
+
+            pipeline.del(
+                draftKey(userId, id)
+            );
+
+        });
+
         pipeline.del(indexKey(userId));
+
         await pipeline.exec();
 
-        return { deleted: slots.length };
+        await Promise.all(
+            ids.map(id => valuationCacheService.invalidate(id))
+        );
+
+        return {
+            deleted: ids.length
+        };
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
-
-    _parseSlotId(userId, draftId) {
-        // draftId format: "{userId}-{slotId}"
-        const prefix = `${userId}-`;
-        if (!draftId.startsWith(prefix)) {
-            throw Object.assign(new Error("Invalid draft id"), { statusCode: 400 });
-        }
-        const slotId = draftId.slice(prefix.length);
-        if (!["1", "2", "3"].includes(slotId)) {
-            throw Object.assign(new Error("Invalid draft slot"), { statusCode: 400 });
-        }
-        return slotId;
-    }
 }
 
 export default DraftService;

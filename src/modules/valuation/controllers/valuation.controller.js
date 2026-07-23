@@ -44,8 +44,8 @@ class EstimatorController {
     const userId = 1; // replace with real auth later
 
     // ── 1. Check MongoDB cache first ─────────────────────────────────────
-    // const cached = await valuationCacheService.get(draftId);
-    if (false) {
+    const cached = await valuationCacheService.get(draftId);
+    if (cached) {
       return reply.send(
         successResponse({ data: cached, message: "Valuation retrieved from cache" })
       );
@@ -63,6 +63,7 @@ class EstimatorController {
     const result = await estimatorService.estimateFromDraft(draft);
 
     console.log("here dradft", draft, "🐦‍🔥🐦‍🔥",result)
+    
     // ── 4. Persist result ─────────────────────────────────────────────────
     await valuationCacheService.save({
       draftId,
