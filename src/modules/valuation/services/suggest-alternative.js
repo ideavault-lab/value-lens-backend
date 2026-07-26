@@ -5,7 +5,11 @@
 // ============================================================
 // src/services/recordValuation.service.js
 
-import {VehicleModel} from "../../vehicle/models/vehicle-model.model.js";
+import { VehicleBrand } from "../../vehicle/models/vehicle-brand.model.js";
+import { VehicleFuelType } from "../../vehicle/models/vehicle-fuel-type.model.js";
+import { VehicleModel } from "../../vehicle/models/vehicle-model.model.js";
+import { VehicleTransmission } from "../../vehicle/models/vehicle-transmission.model.js";
+import { VehicleVariant } from "../../vehicle/models/vehicle-variant.model.js";
 
 const DEPRECIATION_RATE = 0.09; // keep in sync with your valuation engine's curve
 const EMA_ALPHA = 0.2; // higher = more weight to recent valuations, lower = smoother/slower to shift
@@ -144,10 +148,70 @@ async function suggestAlternatives({
     })
     .filter(Boolean);
 
-  return scored
+  // return scored
+  //   .sort((a, b) => a.score - b.score)
+  //   .slice(0, limit)
+  //   .map(({ score, ...rest }) => rest);
+  const alternatives = scored
     .sort((a, b) => a.score - b.score)
-    .slice(0, limit)
-    .map(({ score, ...rest }) => rest);
+    .slice(0, limit);
+
+  const response = [];
+
+  for (const model of alternatives) {
+
+    // Brand
+    const brand = await VehicleBrand.findById(model.brandId).lean();
+
+    // Variant (choose whichever strategy you want)
+    const variant = await VehicleVariant
+      .findOne({
+        modelId: model._id,
+        enabled: true
+      })
+      .sort({
+        year: -1
+      })
+      .lean();
+
+    let fuel = null;
+    let transmission = null;
+
+    if (variant) {
+
+      fuel = await VehicleFuelType.findById(
+        variant.fuelTypeId
+      ).lean();
+
+      transmission = await VehicleTransmission.findById(
+        variant.transmissionId
+      ).lean();
+    }
+
+    response.push({
+      id: model._id,
+
+      brand: brand?.name,
+
+      model: model.name,
+
+      variant: variant?.name,
+
+      year: variant?.year,
+
+      fuel: fuel?.name,
+
+      transmission: transmission?.name,
+
+      segment: model.segment,
+
+      price: model.estimatedCurrentValueLakh,
+
+      resaleDemand: model.resaleDemand
+    });
+  }
+
+  return response;
 }
 
 export { recordValuation, suggestAlternatives };
