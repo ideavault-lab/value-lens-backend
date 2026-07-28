@@ -40,6 +40,9 @@ export const env = {
   REDIS_URL:
     required("REDIS_URL"),
 
+  SESSION_SECRET:
+    required("SESSION_SECRET"),
+
   AI_API_KEY:
     required("AI_API_KEY"),
 
