@@ -16,6 +16,45 @@ import valuationCacheFormatter from "../responses/valuation-cache.response.js";
  */
 class ValuationCacheService {
 
+  async getMeta(draftId) {
+
+    const cached =
+      await valuationResultRepository.findByDraftId(draftId);
+
+    if (!cached)
+      return null;
+
+    const meta = cached.result.meta;
+
+    return {
+
+      brand: {
+        id: meta.brand?.id,
+        name: meta.brand?.name,
+        logo: meta.brand?.logo,
+      },
+
+      model: {
+        id: meta.model?.id,
+        name: meta.model?.name,
+      },
+
+      variant: {
+        id: meta.variant?.id,
+        name: meta.variant?.name,
+        fuelType: meta.variant?.fuelType,
+        transmission: meta.variant?.transmission,
+      },
+
+      year: meta.year,
+
+      ownerType: meta.ownerType,
+
+      condition: meta.condition,
+
+      location: meta.location,
+    };
+  }
   /**
    * Returns a valid cached result or null.
    */
@@ -24,6 +63,7 @@ class ValuationCacheService {
     const cached =
       await valuationResultRepository
         .findByDraftId(draftId);
+
 
     if (!cached) return null;
 
@@ -56,6 +96,8 @@ class ValuationCacheService {
     console.info(`[ValuationCache] INVALIDATE draftId=${draftId} deleted=${deleted}`);
     return deleted;
   }
+
+
 }
 
 export default new ValuationCacheService();

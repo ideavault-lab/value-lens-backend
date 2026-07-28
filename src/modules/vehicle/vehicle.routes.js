@@ -45,12 +45,23 @@ async function vehicleRoutes(app) {
     // KM DRIVEN INSIGHTS
     protectedApp.get("/km-driven-insights", kmDrivenController.getInsights);
 
-    // DRAFTS
+    // // List all drafts for current user
     protectedApp.get("/drafts", draftController.getDrafts);
+
+    // Get a single draft 
     protectedApp.get("/drafts/:draftId", draftController.getDraft);
+
+    // Save (create or update) — body includes optional `draftId`
     protectedApp.post("/drafts", draftController.saveDraft);
+
+    // Delete one draft
     protectedApp.delete("/drafts/:draftId", draftController.deleteDraft);
+
+    // Clear all drafts
     protectedApp.delete("/drafts", draftController.deleteAllDrafts);
+
+     // Get the suggested alternatives for a given model
+    protectedApp.get("/alternatives", suggestionController.getSuggestedAlternatives);
   });
 }
 

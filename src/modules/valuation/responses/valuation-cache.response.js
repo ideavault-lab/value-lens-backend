@@ -4,6 +4,7 @@ class ValuationCacheFormatter {
   toApiResponse(doc) {
     if (!doc) return null;
 
+    console.log("ValuationCacheFormatter: toApiResponse: doc:", doc);
     return {
       estimatedPrice: doc.result?.estimatedPrice,
       priceRange: doc.result?.priceRange,
@@ -15,7 +16,13 @@ class ValuationCacheFormatter {
       depreciationFactors:
         doc.result?.depreciationFactors,
 
+      priceFactors:
+        doc.result?.priceFactors ?? [],
+
       aiInsights: doc.aiInsights,
+
+      segmentIntelligence:
+        doc.segmentIntelligence ?? [], 
 
       warnings:
         doc.result?.warnings ?? [],
