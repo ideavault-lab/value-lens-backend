@@ -2,6 +2,7 @@ import vehicleController from "./controllers/vehicle.controller.js";
 import { getBrandModelsSchema, getBrandsSchema, getModelVariantsSchema, getVehicleTypesSchema } from "./vehicle.schema.js";
 import kmDrivenController from "./controllers/km-driven.controller.js";
 import draftController from "./controllers/draft-controller.js";
+import suggestionController from "../vehicle/controllers/suggest-alternative-controller.js";
 
 async function vehicleRoutes(app) {
   // ---------- PUBLIC ROUTES ----------
