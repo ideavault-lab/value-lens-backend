@@ -15,8 +15,22 @@ export async function registerPlugins(app) {
   });
 
   await app.register(cors, {
-    origin: process.env.CORS_ORIGIN ?? "*",
-    methods: ["GET", "POST", "OPTIONS"],
+    origin: "http://localhost:3000",
+    credentials: true,
+
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
   });
 
   await app.register(rateLimit, {
@@ -29,25 +43,25 @@ export async function registerPlugins(app) {
     }),
   });
 
-   // ====================== REDIS SETUP ======================
-    // We check if REDIS_URL exists in environment variables
-    if (env.REDIS_URL) {
-      try {
-        await app.register(redis, {
-          url: env.REDIS_URL,     // Render will give you this
-          // You can add more options if needed:
-          // maxRetriesPerRequest: 3,
-          // connectTimeout: 5000,
-        });
-        
-        console.log("✅ Redis connected successfully");
-      } catch (err) {
-        console.error("❌ Redis connection failed:", err.message);
-        // Don't crash the app if Redis fails (good practice)
-      }
-    } else {
-      console.warn("⚠️ REDIS_URL is not set. Redis is disabled.");
+  // ====================== REDIS SETUP ======================
+  // We check if REDIS_URL exists in environment variables
+  if (env.REDIS_URL) {
+    try {
+      await app.register(redis, {
+        url: env.REDIS_URL,     // Render will give you this
+        // You can add more options if needed:
+        // maxRetriesPerRequest: 3,
+        // connectTimeout: 5000,
+      });
+
+      console.log("✅ Redis connected successfully");
+    } catch (err) {
+      console.error("❌ Redis connection failed:", err.message);
+      // Don't crash the app if Redis fails (good practice)
     }
+  } else {
+    console.warn("⚠️ REDIS_URL is not set. Redis is disabled.");
+  }
 
   // ── API docs (Swagger / OpenAPI) ───────────────────────────────────────────
   await app.register(swagger, {
@@ -61,8 +75,8 @@ export async function registerPlugins(app) {
       },
       tags: [
         { name: "prediction", description: "Resale value prediction endpoints" },
-        { name: "reference",  description: "Brand and location reference data" },
-        { name: "health",     description: "Health and status" },
+        { name: "reference", description: "Brand and location reference data" },
+        { name: "health", description: "Health and status" },
       ],
     },
   });
