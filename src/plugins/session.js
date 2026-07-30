@@ -1,5 +1,4 @@
 import fp from "fastify-plugin";
-import cookie from "@fastify/cookie";
 import session from "@fastify/session";
 import { requireAuth, requireRole } from "../middlewares/auth.middleware.js";
 import connectRedis from "connect-redis";
@@ -9,7 +8,7 @@ export default fp(async function sessionPlugin(app) {
 
   const RedisStore = connectRedis(session);
 
-  app.register(cookie);
+  // app.register(cookie);
 
   app.register(session, {
     secret: process.env.SESSION_SECRET, // must be >= 32 chars

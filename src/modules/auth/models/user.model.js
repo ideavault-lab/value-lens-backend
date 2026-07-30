@@ -4,53 +4,125 @@ const { Schema } = mongoose;
 
 const userSchema = new Schema(
   {
+    // ========================================
+    // BASIC INFORMATION
+    // ========================================
+
+    firstName: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 50,
+    },
+
+    lastName: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 50,
+    },
+
     email: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
-      trim: true
+      trim: true,
+      index: true,
     },
-    // Optional because OAuth users don't have a local password
+
+    // ========================================
+    // AUTHENTICATION
+    // ========================================
+
     password: {
       type: String,
-      select: false, // never return by default
+      select: false,
+      default: null,
     },
-    name: {
+
+    provider: {
       type: String,
-      trim: true,
+      enum: ["credentials", "google", "github"],
+      default: "credentials",
     },
+
+    providers: {
+      google: {
+        type: String,
+        default: null,
+      },
+
+      github: {
+        type: String,
+        default: null,
+      },
+    },
+
+    // ========================================
+    // PROFILE
+    // ========================================
+
+    avatarUrl: {
+      type: String,
+      default: null,
+    },
+
+    // ========================================
+    // ACCOUNT
+    // ========================================
+
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
     },
-    // Tracks linked OAuth providers, e.g. { google: "1234567890", github: "987654" }
-    providers: {
-      google: { type: String, default: null },
-      github: { type: String, default: null },
+
+    isVerified: {
+      type: Boolean,
+      default: false,
     },
-    avatarUrl: {
-      type: String,
-      default: null,
-    },
+
     isActive: {
       type: Boolean,
       default: true,
     },
+
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-// Prevent password hash from ever leaking even if select() is overridden
-userSchema.methods.toSafeObject = function toSafeObject() {
+// ========================================
+// VIRTUAL
+// ========================================
+
+userSchema.virtual("fullName").get(function () {
+  return `${this.firstName} ${this.lastName}`;
+});
+
+// ========================================
+// SAFE OBJECT
+// ========================================
+
+userSchema.methods.toSafeObject = function () {
   return {
     id: this._id,
+    firstName: this.firstName,
+    lastName: this.lastName,
+    fullName: this.fullName,
     email: this.email,
-    name: this.name,
-    role: this.role,
     avatarUrl: this.avatarUrl,
+    role: this.role,
+    provider: this.provider,
+    isVerified: this.isVerified,
     createdAt: this.createdAt,
+    updatedAt: this.updatedAt,
   };
 };
 

@@ -3,23 +3,43 @@ import { User } from "../models/user.model.js";
 
 const SALT_ROUNDS = 12;
 
-export async function registerUser({ email, password, name }) {
-  const existing = await User.findOne({ email: email.toLowerCase() });
+export async function registerUser(data) {
+
+  const { firstName, lastName, email, password } = data;
+
+  const existing =
+    await User.findOne({
+      email: email.toLowerCase(),
+    });
+
   if (existing) {
-    const err = new Error("An account with this email already exists");
+    const err =
+      new Error("Email already exists");
     err.statusCode = 409;
     throw err;
   }
 
   const hashed = await bcrypt.hash(password, SALT_ROUNDS);
 
-  const user = await User.create({
-    email: email.toLowerCase(),
-    password: hashed,
-    name,
-  });
+  const user =
+    await User.create({
+
+      firstName,
+      lastName,
+      email: email.toLowerCase(),
+      password: hashed,
+      provider: "credentials",
+      isVerified: false,
+
+    });
 
   return user.toSafeObject();
+}
+
+export async function rollbackUser(userId) {
+  if (!userId) return;
+
+  await User.findByIdAndDelete(userId);
 }
 
 export async function verifyCredentials({ email, password }) {

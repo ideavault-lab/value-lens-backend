@@ -1,3 +1,4 @@
+import authController from "../controllers/auth.controller.js";
 import {
   registerUser,
   verifyCredentials,
@@ -32,15 +33,23 @@ export default async function authRoutes(app) {
   // ─────────────────────────────────────────────
   // REGISTER
   // ─────────────────────────────────────────────
-  app.post("/register", { schema: registerSchema }, async (req, reply) => {
-    const { email, password, name } = req.body;
-    const user = await registerUser({ email, password, name });
+  // app.post("/register", { schema: registerSchema }, async (req, reply) => {
+  //   const { email, password, name } = req.body;
+  //   const user = await registerUser({ email, password, name });
 
-    // log them in immediately after registering
-    req.session.userId = user.id;
+  //   // log them in immediately after registering
+  //   req.session.userId = user.id;
 
-    return reply.code(201).send({ success: true, user });
-  });
+  //   return reply.code(201).send({ success: true, user });
+  // });
+    app.post(
+    "/sign-up",
+    // {
+    //   schema: registerSchema,
+    // },
+    authController.register
+  );
+
 
   // ─────────────────────────────────────────────
   // LOGIN

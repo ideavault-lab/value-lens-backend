@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 
 import { registerPlugins } from "./plugins/sensible.js";
+import cookiePlugin from "./plugins/cookie.js";
 import sessionPlugin  from "./plugins/session.js";
 import routes from "./routes/routes.js";
 
@@ -49,6 +50,7 @@ export async function buildApp(opts = {}) {
   // Register Plugins
   // ─────────────────────────────────────────────
   await registerPlugins(app);
+  await cookiePlugin(app);
   await sessionPlugin(app);
   // ─────────────────────────────────────────────
   // Register API Routes
