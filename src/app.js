@@ -7,17 +7,24 @@ import { registerPlugins } from "./plugins/sensible.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export async function buildApp(opts = {}) {
+  const isProduction = process.env.NODE_ENV === "production";
+
   const app = Fastify({
-    logger: opts.logger ?? {
-      transport: {
-        target: "pino-pretty",
-        options: {
-          colorize: true,
-          translateTime: "SYS:standard",
-          ignore: "pid,hostname",
-        },
-      },
-    },
+    logger:
+      opts.logger ??
+      (isProduction
+        ? true
+        : {
+          transport: {
+            target: "pino-pretty",
+            options: {
+              colorize: true,
+              translateTime: "SYS:standard",
+              ignore: "pid,hostname",
+            },
+          },
+        }),
+
     ajv: {
       customOptions: {
         removeAdditional: "all",
