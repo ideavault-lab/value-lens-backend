@@ -92,3 +92,4 @@ temp/
 # Docker (optional)
 # ----------------------
 docker-compose.override.yml
+yarn.lock

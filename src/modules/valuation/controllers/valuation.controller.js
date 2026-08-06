@@ -1,0 +1,103 @@
+import DraftService
+  from "../../vehicle/services/draft-service.js";
+
+
+
+import {
+  successResponse,
+} from "../../../shared/utils/api-response.js";
+
+import estimatorService
+  from "../services/valuation.service.js";
+import valuationCacheService from "../services/valuation-cache.service.js";
+import {recordValuation} from "../services/suggest-alternative.js";
+
+class EstimatorController {
+
+  async getValuationMeta(request, reply) {
+    const { draftId } = request.params;
+    const userId = 1;
+
+    const meta = await estimatorService.getDraftMeta({
+      userId,
+      draftId,
+      redis: request.server.redis,
+    });
+
+    if (!meta) {
+      return reply.status(404).send({
+        status: false,
+        message: "Draft not found",
+      });
+    }
+
+    return reply.send(
+      successResponse({
+        data: meta,
+        message: "Vehicle metadata retrieved successfully",
+      })
+    );
+  }
+
+  async getValuation(request, reply) {
+    const { draftId } = request.params;
+    const userId = 1; // replace with real auth later
+
+    // ── 1. Check MongoDB cache first ─────────────────────────────────────
+    const cached = await valuationCacheService.get(draftId);
+    if (cached) {
+      return reply.send(
+        successResponse({ data: cached, message: "Valuation retrieved from cache" })
+      );
+    }
+
+    // ── 2. Load draft from Redis ──────────────────────────────────────────
+    const draftService = new DraftService(request.server.redis);
+    const draft = await draftService.getDraft(userId, draftId);
+
+    if (!draft) {
+      return reply.status(404).send({ status: false, message: "Draft not found" });
+    }
+
+    // ── 3. Run engine ─────────────────────────────────────────────────────
+    const result = await estimatorService.estimateFromDraft(draft);
+
+    console.log("here dradft", draft, "🐦‍🔥🐦‍🔥",result)
+    
+    // ── 4. Persist result ─────────────────────────────────────────────────
+    await valuationCacheService.save({
+      draftId,
+      vehicleType: draft.vehicleType ?? "car",
+      form: draft,
+      engineResult: result,
+    });
+
+    // fire-and-forget: don't await/block the response on this
+    recordValuation({ modelId:draft.modelId, predictedValueLakh: result.baseMarketValueLakh, vehicleAgeYears: draft.year }).catch((err) =>
+      console.error({ err }, 'Failed to record valuation cache')
+    );
+
+    return reply.send(
+      successResponse({ data: result, message: "Valuation generated successfully" })
+    );
+  }
+
+  async estimate(request, reply) {
+
+    const valuation =
+      await estimatorService
+        .estimate(
+          request.body
+        );
+
+    return reply.send(
+      successResponse({
+        data: valuation,
+        message:
+          "Vehicle resale value estimated successfully",
+      })
+    );
+  }
+}
+
+export default new EstimatorController();
