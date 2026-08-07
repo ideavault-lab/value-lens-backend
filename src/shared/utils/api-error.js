@@ -5,13 +5,16 @@ class ApiError extends Error {
     statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR,
     message = "Internal Server Error",
     error = "Error",
-    details = null
+    details = null,
+    errors = null
   ) {
     super(message);
 
     this.statusCode = statusCode;
     this.error = error;
     this.details = details;
+    this.errors = errors;
+
 
     Error.captureStackTrace(this, this.constructor);
   }

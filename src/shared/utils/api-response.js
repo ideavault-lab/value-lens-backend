@@ -69,18 +69,23 @@ export function successResponse({
     };
 }
 
+
 export function errorResponse({
-    statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR,
-    error = "Error",
-    message = RESPONSE_MESSAGES.INTERNAL_SERVER_ERROR,
-    details = null,
+  statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR,
+  error = "Error",
+  message = RESPONSE_MESSAGES.INTERNAL_SERVER_ERROR,
+  details = null,
+  errors = null,
 }) {
-    return {
-        status: false,
-        statusCode,
-        error,
-        message,
-        ...(details && { details }),
-        timestamp: new Date().toISOString(),
-    };
+  return {
+    status: false,
+    statusCode,
+    error,
+    message,
+
+    ...(errors && { errors }),
+    ...(details && { details }),
+
+    timestamp: new Date().toISOString(),
+  };
 }

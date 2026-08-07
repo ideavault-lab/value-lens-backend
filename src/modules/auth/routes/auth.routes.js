@@ -54,14 +54,22 @@ export default async function authRoutes(app) {
   // ─────────────────────────────────────────────
   // LOGIN
   // ─────────────────────────────────────────────
-  app.post("/login", { schema: loginSchema }, async (req, reply) => {
-    const { email, password } = req.body;
-    const user = await verifyCredentials({ email, password });
+  // app.post("/login", { schema: loginSchema }, async (req, reply) => {
+  //   const { email, password } = req.body;
+  //   const user = await verifyCredentials({ email, password });
 
-    req.session.userId = user.id;
+  //   req.session.userId = user.id;
 
-    return reply.send({ success: true, user });
-  });
+  //   return reply.send({ success: true, user });
+  // });
+
+      app.post(
+    "/sign-in",
+    // {
+    //   schema: loginSchema,
+    // },
+    authController.login
+  );
 
   // ─────────────────────────────────────────────
   // LOGOUT

@@ -1,5 +1,7 @@
 import bcrypt from "bcrypt";
 import { User } from "../models/user.model.js";
+import { badRequest, forbidden, notFound, unauthorized } from "../../../shared/utils/errors.js";
+import { comparePassword } from "../../../shared/utils/password.util.js";
 
 const SALT_ROUNDS = 12;
 
@@ -41,6 +43,59 @@ export async function rollbackUser(userId) {
 
   await User.findByIdAndDelete(userId);
 }
+
+
+export async function loginUser({
+  email,
+  password,
+}) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const user = await User.findOne({
+    email: normalizedEmail,
+  }).select("+password");
+
+  if (!user) {
+    throw notFound(
+      "No account found with this email address.",
+      {
+        email: "Email is not registered.",
+      }
+    );
+  }
+
+  if (!user.isActive) {
+    throw forbidden(
+      "Your account has been disabled."
+    );
+  }
+
+  if (user.provider !== "credentials") {
+    throw badRequest(
+      `This account uses ${user.provider} sign in. Please continue with ${user.provider}.`
+    );
+  }
+
+  const isPasswordValid = await comparePassword(
+    password,
+    user.password
+  );
+
+  if (!isPasswordValid) {
+    throw unauthorized(
+      "Incorrect password.",
+      {
+        password: "Password is incorrect.",
+      }
+    );
+  }
+
+  user.lastLoginAt = new Date();
+  await user.save();
+
+  return user.toSafeObject();
+}
+
 
 export async function verifyCredentials({ email, password }) {
   const user = await User.findOne({ email: email.toLowerCase() }).select("+password");

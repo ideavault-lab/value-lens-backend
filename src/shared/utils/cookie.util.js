@@ -5,26 +5,32 @@ export function setAuthCookie(
     token
 ) {
 
-      console.log("Setting auth cookie...");
     reply.setCookie(
         COOKIE_NAME,
         token,
         {
             httpOnly: true,
+
             secure:
                 process.env.NODE_ENV === "production",
 
-            sameSite: "lax",
+            sameSite:
+                process.env.NODE_ENV === "production"
+                    ? "none"
+                    : "lax",
 
             path: "/",
 
-            maxAge: 60 * 60 * 24 * 7,
+            maxAge:
+                60 * 60 * 24 * 7,
         }
     );
 
 }
 
-export function clearAuthCookie(reply) {
+export function clearAuthCookie(
+    reply
+) {
 
     reply.clearCookie(
         COOKIE_NAME,

@@ -1,18 +1,18 @@
 import {
-    HTTP_STATUS,
+  HTTP_STATUS,
   successResponse,
 } from "../../../shared/utils/api-response.js";
 
 import {
   registerUser,
-  verifyCredentials,
   findOrCreateOAuthUser,
+  loginUser,
 } from "../services/auth.service.js";
 import { createAuthSession } from "../utils/auth.util.js";
 
 class AuthController {
 
-   async register(request, reply) {
+  async register(request, reply) {
 
     let user = null;
     try {
@@ -28,7 +28,7 @@ class AuthController {
         );
 
     } catch (error) {
-       // Roll back only if user creation succeeded
+      // Roll back only if user creation succeeded
       if (user?.id) {
         try {
           await rollbackUser(user.id);
@@ -46,10 +46,15 @@ class AuthController {
 
   async login(request, reply) {
 
+    console.log("LOGIN REQUEST BODY:", request.body);
     const user =
-      await verifyCredentials(request.body);
+      await loginUser(request.body);
 
-    request.session.userId = user.id;
+      console.log("LOGIN USER:", user);
+    createAuthSession(
+      reply,
+      user
+    );
 
     return reply.send(
       successResponse({
@@ -57,19 +62,19 @@ class AuthController {
         message: "Login successful",
       })
     );
+
   }
 
   async logout(request, reply) {
 
-    await request.session.destroy();
-
-    reply.clearCookie("sessionId");
+    clearAuthCookie(reply);
 
     return reply.send(
       successResponse({
         message: "Logged out successfully",
       })
     );
+
   }
 
   async me(request, reply) {
@@ -79,6 +84,7 @@ class AuthController {
         data: request.user,
       })
     );
+
   }
 
   async googleCallback(request, reply) {

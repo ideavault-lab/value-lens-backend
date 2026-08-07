@@ -1,67 +1,84 @@
 import ApiError from "./api-error.js";
 import { HTTP_STATUS } from "./api-response.js";
 
-export const badRequest = (message = "Bad Request") =>
+export const badRequest = (
+  message = "Bad Request",
+  errors = null
+) =>
   new ApiError(
     HTTP_STATUS.BAD_REQUEST,
     message,
-    "Bad Request"
+    "BadRequest",
+    null,
+    errors
   );
 
-export const unauthorized = (message = "Unauthorized") =>
+export const unauthorized = (
+  message = "Unauthorized",
+  errors = null
+) =>
   new ApiError(
     HTTP_STATUS.UNAUTHORIZED,
     message,
-    "Unauthorized"
+    "Unauthorized",
+    null,
+    errors
   );
 
-export const forbidden = (message = "Forbidden") =>
+export const forbidden = (
+  message = "Forbidden",
+  errors = null
+) =>
   new ApiError(
     HTTP_STATUS.FORBIDDEN,
     message,
-    "Forbidden"
+    "Forbidden",
+    null,
+    errors
   );
 
-export const notFound = (message = "Resource not found") =>
+export const notFound = (
+  message = "Resource not found",
+  errors = null
+) =>
   new ApiError(
     HTTP_STATUS.NOT_FOUND,
     message,
-    "Not Found"
+    "NotFound",
+    null,
+    errors
   );
 
-export const conflict = (message = "Conflict") =>
+export const conflict = (
+  message = "Conflict",
+  errors = null
+) =>
   new ApiError(
     HTTP_STATUS.CONFLICT,
     message,
-    "Conflict"
+    "Conflict",
+    null,
+    errors
   );
 
 export const validationError = (
   message = "Validation failed",
+  errors = null,
   details = null
 ) =>
   new ApiError(
     HTTP_STATUS.UNPROCESSABLE_ENTITY,
     message,
-    "Validation Error",
-    details
+    "ValidationError",
+    details,
+    errors
   );
 
-export const internalError = (
+export const internalServerError = (
   message = "Internal server error"
 ) =>
   new ApiError(
     HTTP_STATUS.INTERNAL_SERVER_ERROR,
     message,
-    "Internal Server Error"
-  );
-
-
-export const internalServerError = (
-  message = "Internal Server Error"
-) =>
-  new ApiError(
-    HTTP_STATUS.INTERNAL_SERVER_ERROR,
-    message,
-    "Internal Server Error"
+    "InternalServerError"
   );

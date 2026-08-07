@@ -1,88 +1,125 @@
-import { getUserById } from "../modules/auth/services/auth.service.js";
-import { verifyAccessToken } from "../shared/utils/generate-jwt-token.js";
+import {
+  getUserById,
+} from "../modules/auth/services/auth.service.js";
 
+import {
+  verifyAccessToken,
+} from "../shared/utils/generate-jwt-token.js";
+
+import {
+  errorResponse,
+  HTTP_STATUS,
+} from "../shared/utils/api-response.js";
 
 const COOKIE_NAME = "accessToken";
 
+// ======================================================
+// Attach authenticated user (optional)
+// ======================================================
 
-/**
- * Attach user if valid accessToken exists.
- * Does NOT block request.
- */
-export async function attachUser(req, reply) {
+export async function attachUser(request) {
 
-  const token = req.cookies[COOKIE_NAME];
-
+  const token =
+    request.cookies?.[COOKIE_NAME];
 
   if (!token) {
-    req.user = null;
+    request.user = null;
     return;
   }
 
-
   try {
 
-    const payload = verifyAccessToken(token);
+    const payload =
+      verifyAccessToken(token);
 
+    const user =
+      await getUserById(payload.userId);
 
-    const user = await getUserById(payload.sub);
+    request.user =
+      user ?? null;
 
+  } catch {
 
-    req.user = user ?? null;
-
-
-  } catch (error) {
-
-    req.user = null;
-
-  }
-}
-
-
-
-/**
- * Block request if user is not authenticated.
- */
-export async function requireAuth(req, reply) {
-
-
-  await attachUser(req, reply);
-
-
-  if (!req.user) {
-
-    return reply.code(401).send({
-      success: false,
-      message: "Authentication required"
-    });
+    request.user = null;
 
   }
 
 }
 
+// ======================================================
+// Require Authentication
+// ======================================================
 
+export async function requireAuth(
+  request,
+  reply
+) {
 
-/**
- * Role based protection
- */
-export function requireRole(role) {
+  await attachUser(request);
 
-  return async function (req, reply) {
+  if (request.user) {
+    return;
+  }
 
+  return reply
+    .code(
+      HTTP_STATUS.UNAUTHORIZED
+    )
+    .send(
+      errorResponse({
+        statusCode:
+          HTTP_STATUS.UNAUTHORIZED,
 
-    await requireAuth(req, reply);
+        error: "Unauthorized",
 
+        message:
+          "Authentication required",
+      })
+    );
 
-    if (reply.sent) return;
+}
 
+// ======================================================
+// Require Role
+// ======================================================
 
+export function requireRole(...roles) {
 
-    if (req.user.role !== role) {
+  return async function (
+    request,
+    reply
+  ) {
 
-      return reply.code(403).send({
-        success: false,
-        message: "Insufficient permissions"
-      });
+    await requireAuth(
+      request,
+      reply
+    );
+
+    if (reply.sent) {
+      return;
+    }
+
+    if (
+      !roles.includes(
+        request.user.role
+      )
+    ) {
+
+      return reply
+        .code(
+          HTTP_STATUS.FORBIDDEN
+        )
+        .send(
+          errorResponse({
+            statusCode:
+              HTTP_STATUS.FORBIDDEN,
+
+            error: "Forbidden",
+
+            message:
+              "You do not have permission to perform this action.",
+          })
+        );
 
     }
 

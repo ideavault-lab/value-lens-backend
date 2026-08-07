@@ -53,21 +53,6 @@ export async function buildApp(opts = {}) {
   });
 
   // ─────────────────────────────────────────────
-  // Register Plugins
-  // ─────────────────────────────────────────────
-  await registerPlugins(app);
-  await cookiePlugin(app);
-  await sessionPlugin(app);
-  // ─────────────────────────────────────────────
-  // Register API Routes
-  // FINAL PREFIX:
-  // /api/v1/*
-  // ─────────────────────────────────────────────
-  await app.register(routes, {
-    prefix: "/api",
-  });
-
-  // ─────────────────────────────────────────────
   // Global 404 Handler
   // ─────────────────────────────────────────────
   app.setNotFoundHandler(
@@ -90,62 +75,87 @@ export async function buildApp(opts = {}) {
   // ─────────────────────────────────────────────
   // Global Error Handler
   // ─────────────────────────────────────────────
-  app.setErrorHandler(
-    async (error, request, reply) => {
+  app.setErrorHandler(async (error, request, reply) => {
+    // ----------------------------------
+    // AJV Validation Errors
+    // ----------------------------------
+    if (error.validation) {
+      const errors = {};
 
-      // AJV VALIDATION ERRORS
-      if (error.validation) {
-        return reply
-          .code(HTTP_STATUS.BAD_REQUEST)
-          .send(
-            errorResponse({
-              statusCode:
-                HTTP_STATUS.BAD_REQUEST,
+      for (const validationError of error.validation) {
+        const field =
+          validationError.instancePath.replace("/", "") ||
+          validationError.params?.missingProperty;
 
-              error: "Validation Error",
-
-              message: error.message,
-
-              details: error.validation,
-            })
-          );
+        if (field) {
+          errors[field] = validationError.message;
+        }
       }
 
-      const statusCode =
-        error.statusCode ??
-        HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      return reply
+        .code(HTTP_STATUS.BAD_REQUEST)
+        .send(
+          errorResponse({
+            statusCode: HTTP_STATUS.BAD_REQUEST,
+            error: "Validation Error",
+            message: "Validation failed.",
+            errors,
+          })
+        );
+    }
 
-      // LOG ERROR
+    const statusCode =
+      error.statusCode ??
+      HTTP_STATUS.INTERNAL_SERVER_ERROR;
+
+    // ----------------------------------
+    // Log only server errors
+    // ----------------------------------
+    if (statusCode >= 500) {
       app.log.error({
         reqId: request.id,
         method: request.method,
         url: request.url,
         error,
       });
-
-      return reply
-        .code(statusCode)
-        .send(
-          errorResponse({
-            statusCode,
-
-            error:
-              error.error ||
-              error.name ||
-              "Internal Server Error",
-
-            message:
-              statusCode ===
-                HTTP_STATUS.INTERNAL_SERVER_ERROR
-                ? "An unexpected error occurred"
-                : error.message,
-
-            details:
-              error.details || null,
-          })
-        );
     }
-  );
+
+    return reply
+      .code(statusCode)
+      .send(
+        errorResponse({
+          statusCode,
+
+          error:
+            error.error ??
+            error.name ??
+            "Internal Server Error",
+
+          message:
+            statusCode === HTTP_STATUS.INTERNAL_SERVER_ERROR
+              ? "An unexpected error occurred."
+              : error.message,
+
+          errors: error.errors ?? null,
+          details: error.details ?? null,
+        })
+      );
+  });
+
+  // ─────────────────────────────────────────────
+  // Register Plugins
+  // ─────────────────────────────────────────────
+  await registerPlugins(app);
+  await cookiePlugin(app);
+  await sessionPlugin(app);
+  // ─────────────────────────────────────────────
+  // Register API Routes
+  // FINAL PREFIX:
+  // /api/v1/*
+  // ─────────────────────────────────────────────
+  await app.register(routes, {
+    prefix: "/api",
+  });
 
   return app;
 }
