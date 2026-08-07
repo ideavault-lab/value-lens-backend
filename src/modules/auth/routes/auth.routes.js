@@ -83,9 +83,17 @@ export default async function authRoutes(app) {
   // ─────────────────────────────────────────────
   // CURRENT USER
   // ─────────────────────────────────────────────
-  app.get("/me", { preHandler: app.requireAuth }, async (req, reply) => {
-    return reply.send({ success: true, user: req.user });
-  });
+  // app.get("/me", { preHandler: app.requireAuth }, async (req, reply) => {
+  //   return reply.send({ success: true, user: req.user });
+  // });
+
+  app.get(
+  "/me",
+  {
+    preHandler: app.requireAuth,
+  },
+  authController.me
+);
 
   // ─────────────────────────────────────────────
   // GOOGLE OAUTH CALLBACK

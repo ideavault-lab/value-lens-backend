@@ -33,7 +33,7 @@ export async function attachUser(request) {
       verifyAccessToken(token);
 
     const user =
-      await getUserById(payload.userId);
+      await getUserById(payload.sub);
 
     request.user =
       user ?? null;

@@ -50,7 +50,7 @@ class AuthController {
     const user =
       await loginUser(request.body);
 
-      console.log("LOGIN USER:", user);
+    console.log("LOGIN USER:", user);
     createAuthSession(
       reply,
       user
@@ -78,13 +78,14 @@ class AuthController {
   }
 
   async me(request, reply) {
-
-    return reply.send(
-      successResponse({
-        data: request.user,
-      })
-    );
-
+    return reply
+      .code(HTTP_STATUS.OK)
+      .send(
+        successResponse({
+          message: "Current user fetched successfully",
+          data: request.user,
+        })
+      );
   }
 
   async googleCallback(request, reply) {
