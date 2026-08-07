@@ -42,7 +42,7 @@ export default async function authRoutes(app) {
 
   //   return reply.code(201).send({ success: true, user });
   // });
-    app.post(
+  app.post(
     "/sign-up",
     // {
     //   schema: registerSchema,
@@ -63,7 +63,7 @@ export default async function authRoutes(app) {
   //   return reply.send({ success: true, user });
   // });
 
-      app.post(
+  app.post(
     "/sign-in",
     // {
     //   schema: loginSchema,
@@ -74,11 +74,19 @@ export default async function authRoutes(app) {
   // ─────────────────────────────────────────────
   // LOGOUT
   // ─────────────────────────────────────────────
-  app.post("/logout", async (req, reply) => {
-    await req.session.destroy();
-    reply.clearCookie("sessionId", { path: "/" });
-    return reply.send({ success: true, message: "Logged out" });
-  });
+  // app.post("/logout", async (req, reply) => {
+  //   await req.session.destroy();
+  //   reply.clearCookie("sessionId", { path: "/" });
+  //   return reply.send({ success: true, message: "Logged out" });
+  // });
+
+  app.post(
+    "/logout",
+    {
+      preHandler: app.requireAuth,
+    },
+    authController.logout
+  );
 
   // ─────────────────────────────────────────────
   // CURRENT USER
@@ -88,12 +96,12 @@ export default async function authRoutes(app) {
   // });
 
   app.get(
-  "/me",
-  {
-    preHandler: app.requireAuth,
-  },
-  authController.me
-);
+    "/me",
+    {
+      preHandler: app.requireAuth,
+    },
+    authController.me
+  );
 
   // ─────────────────────────────────────────────
   // GOOGLE OAUTH CALLBACK

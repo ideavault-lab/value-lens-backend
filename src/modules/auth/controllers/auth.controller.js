@@ -2,6 +2,7 @@ import {
   HTTP_STATUS,
   successResponse,
 } from "../../../shared/utils/api-response.js";
+import { clearAuthCookie } from "../../../shared/utils/cookie.util.js";
 
 import {
   registerUser,
@@ -67,6 +68,10 @@ class AuthController {
 
   async logout(request, reply) {
 
+    // destroy session from Redis
+    await request.session.destroy();
+
+    // remove auth cookie
     clearAuthCookie(reply);
 
     return reply.send(
