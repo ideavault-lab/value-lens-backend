@@ -9,9 +9,9 @@ export function setAuthCookie(reply, token) {
         httpOnly: true,
         secure: isProd,
         sameSite: isProd ? "none" : "lax",
-        // domain: isProd
-        //     ? env.COOKIE_DOMAIN
-        //     : undefined,
+        domain: isProd
+            ? env.COOKIE_DOMAIN
+            : undefined,
         path: "/",
         maxAge: 60 * 60 * 24 * 7,
     });
@@ -24,9 +24,9 @@ export function clearAuthCookie(reply) {
         httpOnly: true,
         secure: isProd,
         sameSite: isProd ? "none" : "lax",
-        // domain: isProd
-        //     ? env.COOKIE_DOMAIN
-        //     : undefined,
+        domain: isProd
+            ? env.COOKIE_DOMAIN
+            : undefined,
         path: "/",
     });
 }
