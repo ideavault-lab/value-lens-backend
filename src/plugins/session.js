@@ -17,7 +17,18 @@ export default fp(async function sessionPlugin(app) {
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
-      sameSite: "lax",
+     sameSite:
+        process.env.NODE_ENV === "production"
+          ? "none"
+          : "lax",
+
+      domain:
+        process.env.NODE_ENV === "production"
+          ? process.env.COOKIE_DOMAIN
+          : undefined,
+
+      path: "/",
+
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },
     saveUninitialized: false,

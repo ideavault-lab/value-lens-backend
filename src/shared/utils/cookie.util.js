@@ -1,42 +1,30 @@
 const COOKIE_NAME = "accessToken";
 
-export function setAuthCookie(
-    reply,
-    token
-) {
+export function setAuthCookie(reply, token) {
+    const isProd = process.env.NODE_ENV === "production";
 
-    reply.setCookie(
-        COOKIE_NAME,
-        token,
-        {
-            httpOnly: true,
-
-            secure:
-                process.env.NODE_ENV === "production",
-
-            sameSite:
-                process.env.NODE_ENV === "production"
-                    ? "none"
-                    : "lax",
-
-            path: "/",
-
-            maxAge:
-                60 * 60 * 24 * 7,
-        }
-    );
-
+    reply.setCookie(COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        domain: isProd
+            ? process.env.COOKIE_DOMAIN
+            : undefined,
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+    });
 }
 
-export function clearAuthCookie(
-    reply
-) {
+export function clearAuthCookie(reply) {
+    const isProd = process.env.NODE_ENV === "production";
 
-    reply.clearCookie(
-        COOKIE_NAME,
-        {
-            path: "/",
-        }
-    );
-
+    reply.clearCookie(COOKIE_NAME, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        domain: isProd
+            ? process.env.COOKIE_DOMAIN
+            : undefined,
+        path: "/",
+    });
 }
