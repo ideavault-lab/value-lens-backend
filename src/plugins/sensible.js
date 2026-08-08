@@ -15,7 +15,7 @@ export async function registerPlugins(app) {
   });
 
   await app.register(cors, {
-    origin: "http://localhost:3000",
+    origin: env.FRONTEND_URL ?? "*", // Allow all origins in development, restrict in production
     credentials: true,
 
     methods: [
