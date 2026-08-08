@@ -12,6 +12,7 @@ import {
   HTTP_STATUS,
 } from "./shared/utils/api-response.js";
 import { connectDatabase } from "./config/database.js";
+import { env } from "./config/env.js";
 
 const __dirname = dirname(
   fileURLToPath(import.meta.url)
@@ -23,7 +24,7 @@ export async function buildApp(opts = {}) {
   // CONNECT DATABASE
   await connectDatabase();
 
-  const isProduction = process.env.NODE_ENV === "production";
+  const isProduction = env.NODE_ENV === "production";
 
   const app = Fastify({
     logger:

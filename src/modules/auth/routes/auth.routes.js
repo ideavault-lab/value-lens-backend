@@ -1,3 +1,4 @@
+import { env } from "../../../config/env.js";
 import authController from "../controllers/auth.controller.js";
 import {
   registerUser,
@@ -124,7 +125,7 @@ export default async function authRoutes(app) {
 
     req.session.userId = user.id;
 
-    return reply.redirect(process.env.OAUTH_SUCCESS_REDIRECT ?? "/");
+    return reply.redirect(env.OAUTH_SUCCESS_REDIRECT ?? "/");
   });
 
   // ─────────────────────────────────────────────
@@ -167,6 +168,6 @@ export default async function authRoutes(app) {
 
     req.session.userId = user.id;
 
-    return reply.redirect(process.env.OAUTH_SUCCESS_REDIRECT ?? "/");
+    return reply.redirect(env.OAUTH_SUCCESS_REDIRECT ?? "/");
   });
 }

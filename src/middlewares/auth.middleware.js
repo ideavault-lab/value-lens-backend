@@ -10,8 +10,9 @@ import {
   errorResponse,
   HTTP_STATUS,
 } from "../shared/utils/api-response.js";
+import { env } from "../config/env.js";
 
-const COOKIE_NAME = "accessToken";
+const COOKIE_NAME = env.COOKIE_NAME || "accessToken";
 
 // ======================================================
 // Attach authenticated user (optional)

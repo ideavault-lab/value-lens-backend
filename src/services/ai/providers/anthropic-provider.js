@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { BaseProvider } from "./base-provider.js";
+import { env } from "../../../config/env.js";
 
 /**
  * AnthropicProvider
@@ -12,9 +13,9 @@ export class AnthropicProvider extends BaseProvider {
   constructor() {
     super();
     this._client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY, // set in .env
+      apiKey: env.ANTHROPIC_API_KEY, // set in .env
     });
-    this._model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514";
+    this._model = env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514";
   }
 
   get name() {

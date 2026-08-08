@@ -1,5 +1,6 @@
 import fp from "fastify-plugin";
 import oauthPlugin from "@fastify/oauth2";
+import { env } from "../config/env.js";
 
 export default fp(async function oauthPlugins(app) {
   app.register(oauthPlugin, {
@@ -7,13 +8,13 @@ export default fp(async function oauthPlugins(app) {
     scope: ["profile", "email"],
     credentials: {
       client: {
-        id: process.env.GOOGLE_CLIENT_ID,
-        secret: process.env.GOOGLE_CLIENT_SECRET,
+        id: env.GOOGLE_CLIENT_ID,
+        secret: env.GOOGLE_CLIENT_SECRET,
       },
       auth: oauthPlugin.GOOGLE_CONFIGURATION,
     },
     startRedirectPath: "/api/auth/google",
-    callbackUri: process.env.GOOGLE_CALLBACK_URL, // e.g. http://localhost:3001/api/auth/google/callback
+    callbackUri: env.GOOGLE_CALLBACK_URL, // e.g. http://localhost:3001/api/auth/google/callback
   });
 
   app.register(oauthPlugin, {
@@ -21,12 +22,12 @@ export default fp(async function oauthPlugins(app) {
     scope: ["user:email"],
     credentials: {
       client: {
-        id: process.env.GITHUB_CLIENT_ID,
-        secret: process.env.GITHUB_CLIENT_SECRET,
+        id: env.GITHUB_CLIENT_ID,
+        secret: env.GITHUB_CLIENT_SECRET,
       },
       auth: oauthPlugin.GITHUB_CONFIGURATION,
     },
     startRedirectPath: "/api/auth/github",
-    callbackUri: process.env.GITHUB_CALLBACK_URL, // e.g. http://localhost:3001/api/auth/github/callback
+    callbackUri: env.GITHUB_CALLBACK_URL, // e.g. http://localhost:3001/api/auth/github/callback
   });
 });

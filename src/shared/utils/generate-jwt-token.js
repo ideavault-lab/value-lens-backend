@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { env } from "../../config/env.js";
 
 const ACCESS_TOKEN_EXPIRES = "7d";
 
@@ -9,7 +10,7 @@ export function generateAccessToken(user) {
             sub: user.id,
             role: user.role,
         },
-        process.env.JWT_SECRET,
+        env.JWT_SECRET,
         {
             expiresIn: ACCESS_TOKEN_EXPIRES,
         }
@@ -21,7 +22,7 @@ export function verifyAccessToken(token) {
 
     return jwt.verify(
         token,
-        process.env.JWT_SECRET
+        env.JWT_SECRET
     );
 
 }

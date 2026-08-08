@@ -2,6 +2,7 @@ import fp from "fastify-plugin";
 import session from "@fastify/session";
 import { requireAuth, requireRole } from "../middlewares/auth.middleware.js";
 import connectRedis from "connect-redis";
+import { env } from "../config/env.js";
 
 export default fp(async function sessionPlugin(app) {
   const redisClient = app.redis;
@@ -11,20 +12,20 @@ export default fp(async function sessionPlugin(app) {
   // app.register(cookie);
 
   app.register(session, {
-    secret: process.env.SESSION_SECRET, // must be >= 32 chars
+    secret: env.SESSION_SECRET, // must be >= 32 chars
     cookieName: "sessionId",
     store: new RedisStore({ client: redisClient, prefix: "sess:" }),
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: env.NODE_ENV === "production",
       httpOnly: true,
      sameSite:
-        process.env.NODE_ENV === "production"
+        env.NODE_ENV === "production"
           ? "none"
           : "lax",
 
       domain:
-        process.env.NODE_ENV === "production"
-          ? process.env.COOKIE_DOMAIN
+        env.NODE_ENV === "production"
+          ? env.COOKIE_DOMAIN
           : undefined,
 
       path: "/",
